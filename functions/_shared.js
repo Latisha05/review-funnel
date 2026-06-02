@@ -78,8 +78,12 @@ export async function getAccessToken(env) {
   }
 
   const clientEmail = env.FIREBASE_CLIENT_EMAIL;
-  const privateKeyPem = (env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n");
-  if (!clientEmail || !privateKeyPem) throw new Error("Firebase credentials not configured.");
+  if (!clientEmail || !env.FIREBASE_PRIVATE_KEY) throw new Error("Firebase credentials not configured.");
+  // Normalize key: handle both literal \n strings and already-newlined values
+  const privateKeyPem = env.FIREBASE_PRIVATE_KEY
+    .replace(/\\n/g, "\n")        // literal backslash-n → newline
+    .replace(/\r\n/g, "\n")       // Windows line endings
+    .trim();
 
   const now = Math.floor(Date.now() / 1000);
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));

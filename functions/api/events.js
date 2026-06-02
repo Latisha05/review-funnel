@@ -41,6 +41,7 @@ export async function onRequestPost(ctx) {
     const doc = await firestoreCreate(env, body.collection, payload);
     return json({ ok: true, path: doc.name });
   } catch (e) {
+    console.error("events handler error:", e.message);
     return jsonError(e.message);
   }
 }

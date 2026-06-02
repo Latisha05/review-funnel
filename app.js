@@ -332,6 +332,11 @@ async function generateWithOllama(mode, topics, attempt = 0) {
     recentReviews.length ? `Avoid sounding like these recent suggestions:\n- ${recentReviews.join("\n- ")}` : "",
   ].join("\n");
 
+  const ollamaHost = config.ollamaUrl.replace(/\/api\/generate$/, "");
+  if (!ollamaHost || ollamaHost.includes("NOT_USED") || ollamaHost.includes("localhost") && location.protocol === "https:") {
+    throw new Error("Ollama not available in this environment.");
+  }
+
   const response = await fetch(config.ollamaUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
