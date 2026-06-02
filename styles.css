@@ -376,19 +376,19 @@ input.is-invalid {
   outline-offset: 1px;
 }
 
-/* Clean fixed-size checkbox that never stretches */
+/* Small fixed circular checkbox, centered on the left, never stretches */
 .chip-grid input,
 .inline-check input {
   appearance: none;
   -webkit-appearance: none;
   flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
   margin: 0;
   align-self: center;
   border: 2px solid var(--line-strong);
-  border-radius: 6px;
+  border-radius: 50%;
   background: #ffffff;
   cursor: pointer;
   position: relative;
@@ -399,10 +399,10 @@ input.is-invalid {
 .inline-check input::after {
   content: "";
   position: absolute;
-  top: 2px;
-  left: 6px;
-  width: 5px;
-  height: 9px;
+  top: 3px;
+  left: 5px;
+  width: 4px;
+  height: 8px;
   border: solid #ffffff;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg) scale(0);
