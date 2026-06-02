@@ -170,7 +170,7 @@ function getDynamicQrUrl(qrCodeId = "") {
 
 function getDashboardSettings(request) {
   const origin = getRequestOrigin(request);
-  const publicConfig = getPublicConfig(qrCodeId);
+  const publicConfig = getPublicConfig();
   return {
     settings: Object.fromEntries(
       [...editableSettings].map((key) => [key, env[key] || getEditableFallback(key)]),
