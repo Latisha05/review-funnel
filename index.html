@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Review Funnel</title>
+    <link rel="icon" type="image/png" href="logo.png" />
     <meta
       name="description"
       content="A QR-based review funnel that routes happy customers to Google and unhappy customers to private feedback."
@@ -17,7 +18,7 @@
     <main class="app-shell">
       <section class="review-panel" aria-live="polite">
         <div class="brand-row">
-          <div class="brand-mark" aria-hidden="true">RF</div>
+          <div class="brand-mark" aria-hidden="true"><img src="logo.png" alt="" /></div>
           <div>
             <p class="eyebrow">Review Funnel</p>
             <h1 id="businessName">How was your experience today?</h1>
@@ -56,24 +57,9 @@
             <h2>Copy, edit, then post on Google</h2>
           </div>
 
-          <div class="review-controls">
-            <div class="field-group">
-              <label for="reviewMode">Review length</label>
-              <select id="reviewMode">
-                <option value="short">Short</option>
-                <option value="medium" selected>Medium</option>
-                <option value="long">Long</option>
-              </select>
-            </div>
-            <div class="field-group">
-              <label for="reviewTone">Review tone</label>
-              <select id="reviewTone">
-                <option value="Professional" selected>Professional</option>
-                <option value="Enthusiastic">Enthusiastic</option>
-                <option value="Appreciative">Appreciative</option>
-              </select>
-            </div>
-          </div>
+          <!-- Length and tone are controlled from the dashboard Settings, not shown to reviewers -->
+          <input type="hidden" id="reviewMode" value="medium" />
+          <input type="hidden" id="reviewTone" value="Enthusiastic" />
 
           <div id="positiveTopics" class="chip-grid" aria-label="Review topics">
           </div>

@@ -78,7 +78,8 @@ label {
   content: "";
   position: absolute;
   inset: 0 0 auto;
-  height: 150px;
+  height: 110px;
+  z-index: 0;
   background:
     linear-gradient(135deg, rgba(18, 61, 58, 0.12), rgba(197, 138, 42, 0.1) 58%, transparent);
   pointer-events: none;
@@ -105,17 +106,20 @@ body[data-step="thankYou"] .review-panel::before {
 }
 
 .brand-mark {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
   border-radius: 14px;
-  background: linear-gradient(145deg, #13233a, #07111f);
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 800;
-  box-shadow: 0 12px 24px rgba(7, 17, 31, 0.18);
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(7, 17, 31, 0.12);
+}
+
+.brand-mark img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
 }
 
 .eyebrow {
@@ -467,15 +471,18 @@ textarea:focus {
 }
 
 .success-icon {
-  width: 54px;
-  height: 54px;
+  position: relative;
+  z-index: 1;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  margin-bottom: 15px;
-  background: rgba(31, 122, 77, 0.12);
+  margin-bottom: 16px;
+  background: #ffffff;
+  box-shadow: 0 0 0 6px rgba(31, 122, 77, 0.1), 0 10px 24px rgba(31, 122, 77, 0.18);
   color: var(--success);
-  font-size: 1.6rem;
+  font-size: 1.7rem;
   font-weight: 900;
 }
 
@@ -592,8 +599,8 @@ body[data-step="thankYou"] h1 {
 body[data-step="positive"] .brand-mark,
 body[data-step="feedback"] .brand-mark,
 body[data-step="thankYou"] .brand-mark {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
 }
 
 body[data-step="positive"] .step-heading {
@@ -726,17 +733,19 @@ body[data-step="rating"] .rating-grid {
 }
 
 .brand-logo {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #4f46e5, #818cf8);
-  color: #fff;
+  width: 42px;
+  height: 42px;
+  background: #ffffff;
   border-radius: 12px;
   display: grid;
   place-items: center;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 800;
-  font-size: 1.15rem;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.brand-logo img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
 }
 
 .brand-text h2 {
