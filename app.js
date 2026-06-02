@@ -446,13 +446,28 @@ function buildUniqueFallbackReview(mode, topics) {
 function buildCompactFallbackReview(mode, topics, tone) {
   const options = buildFallbackOptions(mode, topics, tone);
   const start = getFallbackStartIndex(options.length, topics, tone, mode);
+  const candidates = [];
   for (let index = 0; index < options.length; index += 1) {
     const candidate = trimReviewToMode(options[(start + index) % options.length], mode);
+    if (candidate) {
+      candidates.push(candidate);
+    }
     if (isReviewQualityAcceptable(candidate)) {
       return candidate;
     }
   }
-  return trimReviewToMode(options[start], mode);
+
+  const nonExactCandidate = candidates.find((candidate) =>
+    !hasExactReviewMatch(candidate)
+      && !hasOpeningSentenceMatch(candidate)
+      && !hasRepeatedSentenceMatch(candidate)
+      && !hasAwkwardReviewWording(candidate)
+  );
+  if (nonExactCandidate) {
+    return nonExactCandidate;
+  }
+
+  return buildDistinctFallbackVariant(candidates[0] || "", mode);
 }
 
 function buildFallbackOptions(mode, topics, tone) {
@@ -463,43 +478,229 @@ function buildFallbackOptions(mode, topics, tone) {
     return noTopicOptions;
   }
 
-  const openings = getFallbackOpenings(tone, business);
-  const outcomes = getFallbackOutcomes(tone);
-  const bridges = [
-    "the project felt organized from the first call",
-    "we always knew what was happening next",
-    "the final work felt aligned with our goals",
-    "the process stayed smooth without losing momentum",
-    "our team could move forward with more confidence",
-    "the collaboration felt focused and easy to trust",
-  ];
-  const topicPhrases = getTopicPhraseVariants(topicSet);
-  const options = [];
-
-  for (let i = 0; i < openings.length; i += 1) {
-    const topicPhrase = topicPhrases[i % topicPhrases.length];
-    const outcome = outcomes[(i + state.generationCount) % outcomes.length];
-    const bridge = bridges[(i + topicSet.length + state.generationCount) % bridges.length];
-
-    if (mode === "short") {
-      options.push(`${openings[i]} ${topicPhrase.highlight}`);
-      continue;
-    }
-
-    if (mode === "long") {
-      options.push(`${openings[i]} ${topicPhrase.highlight} ${bridge}, and ${outcome}.`);
-      continue;
-    }
-
-    options.push(`${openings[i]} ${topicPhrase.inline}, and ${outcome}.`);
-    options.push(`${openings[i]} ${bridge}. ${topicPhrase.highlight}`);
+  if (mode === "short") {
+    return buildShortTopicFallbackOptions(topicSet, tone, business);
   }
 
+  return buildTopicFallbackOptions(topicSet, mode, tone, business);
+}
+
+function buildTopicFallbackOptions(topicSet, mode, tone, business) {
+  const topicSentences = getTopicSentenceVariants(topicSet);
+  const openings = {
+    Professional: [
+      `${business} gave us a solid, practical experience.`,
+      `Working with ${business} felt organized and dependable.`,
+      `${business} was a reliable digital partner for our team.`,
+      `${business} kept the project practical and focused.`,
+      `Our team had a dependable experience with ${business}.`,
+      `${business} brought a steady, professional approach.`,
+      `The project with ${business} felt well structured.`,
+      `${business} handled the work with clear ownership.`,
+      `Our work with ${business} stayed clear and purposeful.`,
+      `${business} approached the project with real professionalism.`,
+      `The ${business} team kept the work moving in the right direction.`,
+      `${business} gave us a practical and reliable collaboration.`,
+      `We found ${business} easy to work with throughout the project.`,
+      `${business} supported the project with a steady approach.`,
+    ],
+    Enthusiastic: [
+      `Really happy with the work from ${business}.`,
+      `${business} genuinely impressed us on this project.`,
+      `We had a strong experience working with ${business}.`,
+      `${business} did a great job on this project.`,
+      `The ${business} team made a strong impression.`,
+      `Working with ${business} was a very positive experience.`,
+      `${business} brought real energy to the work.`,
+      `Our experience with ${business} was genuinely positive.`,
+      `${business} delivered a really solid experience for us.`,
+      `We liked how ${business} showed up on this project.`,
+      `The project with ${business} went really well.`,
+      `${business} gave us work we felt good about.`,
+      `We came away impressed with ${business}.`,
+      `${business} made the collaboration feel worthwhile.`,
+      `The ${business} team did work we could trust.`,
+      `We were pleased with the way ${business} worked.`,
+    ],
+    Appreciative: [
+      `We appreciated the way ${business} worked with us.`,
+      `${business} was thoughtful, clear, and reliable throughout.`,
+      `We valued the care ${business} brought to the project.`,
+      `${business} made the collaboration easy to appreciate.`,
+      `We were glad to have ${business} on this project.`,
+      `The ${business} team was considerate and dependable.`,
+      `We appreciated ${business}'s practical support.`,
+      `${business} gave us a thoughtful working experience.`,
+      `We valued the way ${business} supported the work.`,
+      `${business} made the project feel well cared for.`,
+      `The support from ${business} felt clear and dependable.`,
+      `We appreciated how seriously ${business} took the project.`,
+      `${business} gave us a reliable and thoughtful experience.`,
+      `We felt ${business} brought real care to the work.`,
+    ],
+  };
+  const closing = {
+    Professional: "The result felt useful for our business.",
+    Enthusiastic: "The final result felt genuinely useful.",
+    Appreciative: "It made the collaboration easy to value.",
+  };
+  const toneOpenings = openings[tone] || openings.Professional;
+  const options = [];
+
+  if (mode === "long") {
+    for (const opening of toneOpenings) {
+      for (const topicSentence of topicSentences) {
+        options.push(`${opening} ${topicSentence} ${closing[tone] || closing.Professional}`);
+      }
+    }
+    return options;
+  }
+
+  for (const opening of toneOpenings) {
+    for (const topicSentence of topicSentences) {
+      options.push(`${opening} ${topicSentence}`);
+    }
+  }
   return options;
 }
 
+function buildShortTopicFallbackOptions(topicSet, tone, business) {
+  const clauses = topicSet.slice(0, 2).map(getShortTopicClause).filter(Boolean);
+  const joined = joinShortClauses(clauses);
+  const options = {
+    Professional: [
+      `${business} ${joined}.`,
+      `${business} delivered solid work and ${joined}.`,
+      `A reliable experience with ${business}; they ${joined}.`,
+      `Good work from ${business}; they ${joined}.`,
+      `${business} was practical and ${joined}.`,
+      `${business} kept things focused and ${joined}.`,
+      `Solid experience with ${business}; they ${joined}.`,
+      `${business} supported the work well and ${joined}.`,
+    ],
+    Enthusiastic: [
+      `${business} did great work and ${joined}.`,
+      `Really happy with ${business}; they ${joined}.`,
+      `${business} impressed us and ${joined}.`,
+      `Great experience with ${business}; they ${joined}.`,
+      `${business} showed up strongly and ${joined}.`,
+      `${business} made a strong impression and ${joined}.`,
+      `Loved the experience with ${business}; they ${joined}.`,
+      `${business} delivered a solid result and ${joined}.`,
+    ],
+    Appreciative: [
+      `We appreciated ${business}; they ${joined}.`,
+      `${business} was reliable and ${joined}.`,
+      `We valued working with ${business}; they ${joined}.`,
+      `Grateful for ${business}; they ${joined}.`,
+      `${business} supported us well and ${joined}.`,
+      `We valued ${business}'s support; they ${joined}.`,
+      `${business} was helpful and ${joined}.`,
+      `We appreciated the work from ${business}; they ${joined}.`,
+    ],
+  };
+  return options[tone] || options.Professional;
+}
+
+function getShortTopicClause(topic) {
+  const clauses = {
+    "quick support": "responded quickly",
+    "clear communication": "communicated clearly",
+    "patient guidance": "explained things patiently",
+    "timely delivery": "managed timelines well",
+    "process clarity": "kept the process clear",
+    "attention to detail": "thought through the small details",
+    "thoughtful extra effort": "went beyond the basics",
+    "strong business value": "added business value",
+    "calm project handling": "kept the project manageable",
+  };
+  return clauses[topic] || `made ${topic} stand out`;
+}
+
+function getReviewTopicClause(topic) {
+  const clauses = {
+    "quick support": "responded quickly",
+    "clear communication": "communicated clearly",
+    "patient guidance": "explained things patiently",
+    "timely delivery": "managed timelines well",
+    "process clarity": "kept the process clear",
+    "attention to detail": "thought through the small details",
+    "thoughtful extra effort": "went beyond the basics",
+    "strong business value": "added business value",
+    "calm project handling": "kept the project manageable",
+  };
+  return clauses[topic] || `made ${topic} stand out`;
+}
+
+function getReviewTopicNounPhrase(topic) {
+  const phrases = {
+    "quick support": "responsive support",
+    "clear communication": "clear communication",
+    "patient guidance": "patient explanations",
+    "timely delivery": "well-managed timelines",
+    "process clarity": "a clear process",
+    "attention to detail": "careful attention to detail",
+    "thoughtful extra effort": "thoughtful extra effort",
+    "strong business value": "business value",
+    "calm project handling": "steady project handling",
+  };
+  return phrases[topic] || topic;
+}
+
+function getTopicSentenceVariants(topicSet) {
+  const clauses = topicSet.map(getReviewTopicClause).filter(Boolean);
+  const nounPhrases = topicSet.map(getReviewTopicNounPhrase).filter(Boolean);
+  const joinedClauses = joinReviewClauses(clauses);
+  const joinedNouns = joinNaturalPhrases(nounPhrases);
+  return [
+    `They ${joinedClauses}.`,
+    `${capitalizeFirst(joinedNouns)} stood out during the project.`,
+    `We noticed ${joinedNouns} throughout the work.`,
+    `The team showed ${joinedNouns} in the way they worked.`,
+    `Their ${joinedNouns} made the project easier to trust.`,
+    `The project benefited from ${joinedNouns}.`,
+    `It was clear that the team ${joinedClauses}.`,
+    `What stood out most was ${joinedNouns}.`,
+    `${capitalizeFirst(joinedNouns)} made the collaboration stronger.`,
+    `The team brought ${joinedNouns} into the work.`,
+    `We could see ${joinedNouns} in the final experience.`,
+    `The work showed ${joinedNouns} in a practical way.`,
+    `That mix of ${joinedNouns} made the work stronger.`,
+    `The experience was stronger because of ${joinedNouns}.`,
+    `Their work gave us ${joinedNouns} in a practical way.`,
+    `The team made ${joinedNouns} feel consistent throughout.`,
+  ];
+}
+
+function joinShortClauses(clauses) {
+  if (clauses.length <= 1) {
+    return clauses[0] || "delivered a solid experience";
+  }
+  return `${clauses[0]} and ${clauses[1]}`;
+}
+
+function joinReviewClauses(clauses) {
+  if (clauses.length <= 1) {
+    return clauses[0] || "delivered a solid experience";
+  }
+  if (clauses.length === 2) {
+    return `${clauses[0]}, and ${clauses[1]}`;
+  }
+  return `${clauses.slice(0, -1).join(", ")}, and ${clauses[clauses.length - 1]}`;
+}
+
+function joinNaturalPhrases(phrases) {
+  if (phrases.length <= 1) {
+    return phrases[0] || "a solid experience";
+  }
+  if (phrases.length === 2) {
+    return `${phrases[0]} and ${phrases[1]}`;
+  }
+  return `${phrases.slice(0, -1).join(", ")}, and ${phrases[phrases.length - 1]}`;
+}
+
 function getTopicSet(topics) {
-  return topics.slice(0, 3).map(normalizeTopicForImpact).filter(Boolean);
+  return topics.slice(0, 4).map(normalizeTopicForImpact).filter(Boolean);
 }
 
 function normalizeTopicForImpact(topic) {
@@ -691,8 +892,37 @@ function trimReviewToMode(review, mode) {
   if (clean.length <= limit) {
     return clean;
   }
+  if (mode === "short") {
+    return "";
+  }
   const trimmed = clean.slice(0, limit - 1).replace(/\s+\S*$/, "").replace(/[,.!?;:]+$/, "");
   return `${trimmed}.`;
+}
+
+function buildDistinctFallbackVariant(review, mode) {
+  const clean = sanitizeReview(review);
+  if (!hasExactReviewMatch(clean) && !hasOpeningSentenceMatch(clean) && !hasRepeatedSentenceMatch(clean)) {
+    return clean;
+  }
+
+  return getOpeningSafeFallback(mode);
+}
+
+function getOpeningSafeFallback(mode) {
+  const fallbacks = mode === "short"
+    ? [
+      "Useful, genuine experience with the team.",
+      "Solid work and a helpful overall experience.",
+      "A practical and worthwhile experience.",
+    ]
+    : [
+      "The experience felt genuine, useful, and easy to recommend.",
+      "The overall work felt practical, helpful, and easy to value.",
+      "The team gave us a solid experience that felt useful.",
+      "The work felt considered, practical, and worthwhile.",
+      "The collaboration felt useful without being complicated.",
+    ];
+  return fallbacks.find((fallback) => !hasOpeningSentenceMatch(fallback) && !hasRepeatedSentenceMatch(fallback)) || fallbacks[0];
 }
 
 function getReviewStyleAngle(attempt) {
@@ -720,7 +950,52 @@ function isRedundantReview(candidate) {
 }
 
 function isReviewQualityAcceptable(candidate) {
-  return !hasAwkwardReviewWording(candidate) && !isRedundantReview(candidate);
+  return !hasExactReviewMatch(candidate)
+    && !hasOpeningSentenceMatch(candidate)
+    && !hasRepeatedSentenceMatch(candidate)
+    && !hasAwkwardReviewWording(candidate)
+    && !isRedundantReview(candidate);
+}
+
+function hasExactReviewMatch(candidate) {
+  const normalizedCandidate = normalizeExactReview(candidate);
+  if (!normalizedCandidate) {
+    return false;
+  }
+  return getReviewHistory().some((previousReview) => normalizeExactReview(previousReview) === normalizedCandidate);
+}
+
+function normalizeExactReview(review) {
+  return sanitizeReview(review).toLowerCase();
+}
+
+function hasOpeningSentenceMatch(candidate) {
+  const opening = normalizeOpeningSentence(candidate);
+  if (!opening) {
+    return false;
+  }
+  return getReviewHistory().some((previousReview) => normalizeOpeningSentence(previousReview) === opening);
+}
+
+function normalizeOpeningSentence(review) {
+  const firstSentence = sanitizeReview(review).split(/[.!?]/)[0] || "";
+  return firstSentence.toLowerCase().trim();
+}
+
+function hasRepeatedSentenceMatch(candidate) {
+  const candidateSentences = getNormalizedReviewSentences(candidate);
+  if (!candidateSentences.length) {
+    return false;
+  }
+  const previousSentences = new Set(getReviewHistory().flatMap(getNormalizedReviewSentences));
+  return candidateSentences.some((sentence) => previousSentences.has(sentence));
+}
+
+function getNormalizedReviewSentences(review) {
+  return sanitizeReview(review)
+    .split(/[.!?]/)
+    .map((sentence) => sentence.toLowerCase().trim())
+    .filter(Boolean);
 }
 
 function hasAwkwardReviewWording(candidate) {
