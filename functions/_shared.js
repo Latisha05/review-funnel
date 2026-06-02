@@ -78,7 +78,14 @@ export async function getAccessToken(env) {
   }
 
   const clientEmail = env.FIREBASE_CLIENT_EMAIL;
-  if (!clientEmail || !env.FIREBASE_PRIVATE_KEY) throw new Error("Firebase credentials not configured.");
+  if (!clientEmail || !env.FIREBASE_PRIVATE_KEY || !env.FIREBASE_PROJECT_ID) {
+    const missing = [
+      !env.FIREBASE_PROJECT_ID && "FIREBASE_PROJECT_ID",
+      !clientEmail && "FIREBASE_CLIENT_EMAIL",
+      !env.FIREBASE_PRIVATE_KEY && "FIREBASE_PRIVATE_KEY",
+    ].filter(Boolean).join(", ");
+    throw new Error(`Firebase credentials missing: ${missing}. Set them as Production secrets in Cloudflare Pages and redeploy.`);
+  }
   // Normalize key: handle both literal \n strings and already-newlined values
   const privateKeyPem = env.FIREBASE_PRIVATE_KEY
     .replace(/\\n/g, "\n")        // literal backslash-n → newline
