@@ -751,7 +751,7 @@ function showThankYou(isPositive, openedGoogle = false, googleReviewUrl = "") {
     ? openedGoogle
       ? "Thank you, this means a lot to us. Your review has been copied and you will be redirected to Google Reviews shortly."
       : "Your review test has been saved. Add a Google Place ID later to enable the redirect."
-    : "Your feedback has been sent privately so the team can fix the issue.";
+    : "Thank you for your review! We truly value your input and our team will work on making your next experience even better.";
   reviewInstructions.hidden = !isPositive || !openedGoogle;
   document.querySelector("#postedButton").hidden = true;
   showStep("thankYou");

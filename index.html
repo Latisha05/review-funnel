@@ -74,7 +74,6 @@
 
         <form id="feedbackStep" class="step">
           <div class="step-heading">
-            <p class="eyebrow">Private feedback</p>
             <h2>Tell us what went wrong</h2>
           </div>
 
@@ -82,17 +81,17 @@
           </div>
 
           <div class="field-group">
-            <label for="feedbackMessage">Feedback message</label>
-            <textarea id="feedbackMessage" name="message" rows="5" required></textarea>
+            <label for="feedbackMessage">Your review <span class="field-optional">(optional)</span></label>
+            <textarea id="feedbackMessage" name="message" rows="5"></textarea>
           </div>
 
           <div class="form-grid">
             <div class="field-group">
-              <label for="customerName">Name</label>
+              <label for="customerName">Name <span class="field-optional">(optional)</span></label>
               <input id="customerName" name="name" autocomplete="name" />
             </div>
             <div class="field-group">
-              <label for="customerPhone">Phone</label>
+              <label for="customerPhone">Phone <span class="field-optional">(optional)</span></label>
               <input id="customerPhone" name="phone" autocomplete="tel" inputmode="tel" />
             </div>
           </div>
@@ -102,7 +101,7 @@
             I would like the team to follow up
           </label>
 
-          <button class="primary-button" type="submit">Send feedback privately</button>
+          <button class="primary-button" type="submit">Post review</button>
         </form>
 
         <div id="thankYouStep" class="step">

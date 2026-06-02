@@ -571,17 +571,6 @@ textarea:focus {
   line-height: 1;
 }
 
-#feedbackStep .primary-button {
-  background: linear-gradient(180deg, #8a6010, #5c3e09);
-  box-shadow: 0 18px 34px rgba(138, 96, 16, 0.22);
-}
-
-#feedbackStep .primary-button:hover,
-#feedbackStep .primary-button:focus-visible {
-  background: linear-gradient(180deg, #9a6c14, #5c3e09);
-  box-shadow: 0 22px 38px rgba(138, 96, 16, 0.28);
-}
-
 body[data-step="positive"] .brand-row,
 body[data-step="feedback"] .brand-row,
 body[data-step="thankYou"] .brand-row {
