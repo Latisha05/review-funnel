@@ -736,11 +736,7 @@ function savePostedReview() {
 }
 
 function getGoogleReviewUrl() {
-  if (!config.googlePlaceId || config.googlePlaceId === "PASTE_GOOGLE_PLACE_ID") {
-    return "https://g.page/r/CUylmtiX6yoSEAE/review";
-  }
-
-  return `https://g.page/r/${encodeURIComponent(config.googlePlaceId)}/review`;
+  return "https://g.page/r/CUylmtiX6yoSEAE/review";
 }
 
 function showThankYou(isPositive, openedGoogle = false, googleReviewUrl = "") {
