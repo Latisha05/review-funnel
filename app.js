@@ -377,6 +377,7 @@ async function generateWithOllama(mode, topics, attempt = 0) {
     `Style angle: ${styleAngle}.`,
     "Keep it natural, human, specific, and B2B digital-agency oriented. Do not write about food, dining, or restaurants.",
     "The selected topics are context, not permission to make the review long. Mention impact briefly and keep the final text tight.",
+    "Do not invent emotional process claims like 'calm', 'guided', or 'stress-free' unless the selected topic directly asks for that idea.",
     "Before answering, silently check whether the review sounds like something a real client would actually post. Rewrite it if any sentence feels awkward, circular, redundant, or mechanically generated.",
     "Do not use clumsy phrases like 'showed clearly in the final result', 'process clarity showed clearly', or any wording that repeats the same idea in different words.",
     "Do not use the same opening, ending, sentence shape, or impact phrase as prior suggestions.",
@@ -571,12 +572,12 @@ function getFallbackOpenings(tone, business) {
       `${business} turned the work into a smooth win.`,
     ],
     Appreciative: [
-      `We really appreciated ${business}.`,
-      `${business} made the process feel calm.`,
-      `We felt well supported by ${business}.`,
-      `The team at ${business} was easy to trust.`,
-      `We are thankful for how ${business} guided us.`,
-      `${business} made the collaboration feel simple.`,
+      `We appreciated ${business}'s practical approach.`,
+      `${business} kept the work clear and focused.`,
+      `We valued how ${business} handled the project.`,
+      `The team at ${business} was thoughtful and reliable.`,
+      `${business} understood what our business needed.`,
+      `${business} made the collaboration productive.`,
     ],
   };
   return openings[tone] || openings.Professional;
@@ -635,13 +636,13 @@ function getNoTopicFallbackOptions(mode, tone, business) {
       ],
     },
     Appreciative: {
-      short: [`Grateful for the clear support from ${business}.`, `${business} made the process feel calm and guided.`],
+      short: [`Grateful for the clear support from ${business}.`, `${business} kept the work clear and practical.`],
       medium: [
-        `We appreciated how ${business} supported us. The team made the process clear, calm, and easy to follow.`,
-        `${business} was patient and reliable throughout. We felt guided without feeling rushed or confused.`,
+        `We appreciated how ${business} supported us. The team kept the work clear, practical, and easy to follow.`,
+        `${business} was patient and reliable throughout. Their team explained things clearly and kept the project moving.`,
       ],
       long: [
-        `We appreciated the care ${business} brought to the project. Their team listened well, explained things clearly, and helped us make decisions with confidence. The collaboration felt calm, useful, and well guided.`,
+        `We appreciated the care ${business} brought to the project. Their team listened well, explained things clearly, and helped us make decisions with confidence. The collaboration felt useful, focused, and easy to build on.`,
       ],
     },
   };
@@ -712,6 +713,8 @@ function hasAwkwardReviewWording(candidate) {
     /\b(\w+(?:\s+\w+)?) and \1 were handled\b/,
     /\bshowed clearly in the final result\b/,
     /\bprocess clarity showed clearly\b/,
+    /\bmade the process feel calm\b/,
+    /\bthankful for how .* guided us\b/,
   ];
   return blockedPatterns.some((pattern) => pattern.test(normalized));
 }
