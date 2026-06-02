@@ -78,22 +78,30 @@ const reviewInstructions = document.querySelector("#reviewInstructions");
 document.body.dataset.step = "rating";
 initApp();
 
+function paintStars(rating) {
+  document.querySelectorAll(".rating-button").forEach((ratingButton) => {
+    const value = Number(ratingButton.dataset.rating);
+    ratingButton.classList.toggle("is-filled", value <= rating);
+    ratingButton.classList.toggle("is-selected", value === rating);
+  });
+}
+
 document.querySelectorAll(".rating-button").forEach((button) => {
   button.addEventListener("click", () => {
     state.rating = Number(button.dataset.rating);
     state.ratingEventId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    document.querySelectorAll(".rating-button").forEach((ratingButton) => {
-      ratingButton.classList.toggle("is-selected", ratingButton === button);
-    });
+    paintStars(state.rating);
     saveScanEvent("rating_selected", { rating: state.rating, ratingEventId: state.ratingEventId });
 
-    if (state.rating >= 4) {
-      showStep("positive");
-      generateReview();
-      return;
-    }
-
-    showStep("feedback");
+    // Brief pause so the reviewer sees the stars fill before advancing
+    window.setTimeout(() => {
+      if (state.rating >= 4) {
+        showStep("positive");
+        generateReview();
+      } else {
+        showStep("feedback");
+      }
+    }, 280);
   });
 });
 
@@ -169,7 +177,7 @@ document.querySelector("#startOverButton").addEventListener("click", () => {
   googleReviewButton.disabled = false;
   googleReviewButton.textContent = "Post review on Google";
   document.querySelectorAll(".rating-button").forEach((ratingButton) => {
-    ratingButton.classList.remove("is-selected");
+    ratingButton.classList.remove("is-selected", "is-filled");
   });
   showStep("rating");
 });
