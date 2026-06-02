@@ -379,6 +379,7 @@ async function generateWithOllama(mode, topics, attempt = 0) {
     "The selected topics are context, not permission to make the review long. Mention impact briefly and keep the final text tight.",
     "Do not invent emotional process claims like 'calm', 'guided', or 'stress-free' unless the selected topic directly asks for that idea.",
     "Before answering, silently check whether the review sounds like something a real client would actually post. Rewrite it if any sentence feels awkward, circular, redundant, or mechanically generated.",
+    "Do not turn selected topics into passive dashboard-language sentences. For example, never write 'attention to detail was handled really well'; write a human sentence like 'the small details were clearly thought through'.",
     "Do not use clumsy phrases like 'showed clearly in the final result', 'process clarity showed clearly', or any wording that repeats the same idea in different words.",
     "Do not use the same opening, ending, sentence shape, or impact phrase as prior suggestions.",
     "Avoid template phrases like 'loved working with', 'really lifted the outcome', and 'made a real difference' unless they are not present in recent suggestions.",
@@ -521,10 +522,11 @@ function getTopicPhraseVariants(topicSet) {
   const first = topicSet[0];
   const second = topicSet[1] || topicSet[0];
   const third = topicSet[2] || topicSet[0];
-  const handledPhrase = topicSet.length > 1 ? `${first} and ${second} were` : `${first} was`;
-  const practicalPhrase = third === "process clarity"
-    ? "their clear process made the project easy to follow"
-    : `the work reflected ${third} in a practical way`;
+  const handledPhrase = getNaturalTopicPhrase(first);
+  const pairedPhrase = topicSet.length > 1
+    ? `${getNaturalTopicPhrase(first)} and ${getNaturalTopicPhrase(second)}`
+    : handledPhrase;
+  const practicalPhrase = getNaturalTopicPhrase(third);
   return [
     {
       inline: `${joined} stood out`,
@@ -535,8 +537,8 @@ function getTopicPhraseVariants(topicSet) {
       highlight: `Their ${joined} made the work easier.`,
     },
     {
-      inline: `${handledPhrase} handled really well`,
-      highlight: `${capitalizeFirst(handledPhrase)} handled really well.`,
+      inline: topicSet.length > 1 ? pairedPhrase : handledPhrase,
+      highlight: `${capitalizeFirst(topicSet.length > 1 ? pairedPhrase : handledPhrase)}.`,
     },
     {
       inline: `the team brought ${joined} into the whole project`,
@@ -574,13 +576,28 @@ function getFallbackOpenings(tone, business) {
     Appreciative: [
       `We appreciated ${business}'s practical approach.`,
       `${business} kept the work clear and focused.`,
-      `We valued how ${business} handled the project.`,
+      `We valued ${business}'s focused way of working.`,
       `The team at ${business} was thoughtful and reliable.`,
       `${business} understood what our business needed.`,
       `${business} made the collaboration productive.`,
     ],
   };
   return openings[tone] || openings.Professional;
+}
+
+function getNaturalTopicPhrase(topic) {
+  const phrases = {
+    "quick support": "the team responded quickly when it mattered",
+    "clear communication": "communication stayed clear throughout",
+    "patient guidance": "the team explained things patiently",
+    "timely delivery": "timelines were managed well",
+    "process clarity": "the process was easy to follow",
+    "attention to detail": "the small details were clearly thought through",
+    "thoughtful extra effort": "the team put in thoughtful extra effort",
+    "strong business value": "the work felt valuable for our business",
+    "calm project handling": "the project stayed easy to manage",
+  };
+  return phrases[topic] || `${topic} stood out in the work`;
 }
 
 function getFallbackOutcomes(tone) {
@@ -713,6 +730,10 @@ function hasAwkwardReviewWording(candidate) {
     /\b(\w+(?:\s+\w+)?) and \1 were handled\b/,
     /\bshowed clearly in the final result\b/,
     /\bprocess clarity showed clearly\b/,
+    /\battention to detail was handled\b/,
+    /\bwas handled really well\b/,
+    /\bwork reflected attention to detail\b/,
+    /\bvalued how .* handled the project\b/,
     /\bmade the process feel calm\b/,
     /\bthankful for how .* guided us\b/,
   ];
