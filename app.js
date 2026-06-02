@@ -124,14 +124,30 @@ googleReviewButton.addEventListener("click", async () => {
 document.querySelector("#feedbackStep").addEventListener("submit", (event) => {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
+  const issues = data.getAll("issue");
+  const message = String(data.get("message") || "").trim();
+
+  // If "Other" is selected, the review message becomes mandatory
+  const otherSelected = issues.some((issue) => issue.toLowerCase() === "other");
+  if (otherSelected && !message) {
+    const messageField = document.querySelector("#feedbackMessage");
+    showToast("Please describe the issue in your review.");
+    if (messageField) {
+      messageField.setAttribute("aria-invalid", "true");
+      messageField.classList.add("is-invalid");
+      messageField.focus();
+    }
+    return;
+  }
+
   const payload = {
     rating: state.rating,
     ratingEventId: state.ratingEventId,
-    message: data.get("message"),
+    message,
     name: data.get("name"),
     phone: data.get("phone"),
     callback: data.get("callback") === "on",
-    issues: data.getAll("issue"),
+    issues,
     context: config.qrContext,
     createdAt: new Date().toISOString(),
   };
@@ -188,6 +204,35 @@ function renderTopicChips() {
   feedbackTopics.innerHTML = config.feedbackTopics
     .map((topic) => `<label><input type="checkbox" name="issue" value="${escapeHtml(topic)}" /> ${escapeHtml(getShortTopicLabel(topic))}</label>`)
     .join("");
+
+  // When "Other" is toggled, reflect whether the review message is required
+  feedbackTopics.querySelectorAll('input[name="issue"]').forEach((input) => {
+    input.addEventListener("change", updateFeedbackMessageRequirement);
+  });
+
+  const messageField = document.querySelector("#feedbackMessage");
+  if (messageField) {
+    messageField.addEventListener("input", () => {
+      messageField.removeAttribute("aria-invalid");
+      messageField.classList.remove("is-invalid");
+    });
+  }
+}
+
+function updateFeedbackMessageRequirement() {
+  const otherSelected = Array.from(
+    feedbackTopics.querySelectorAll('input[name="issue"]:checked')
+  ).some((input) => input.value.toLowerCase() === "other");
+
+  const optionalTag = document.querySelector("#feedbackMessageLabel .field-optional");
+  const messageField = document.querySelector("#feedbackMessage");
+  if (optionalTag) {
+    optionalTag.textContent = otherSelected ? "(required)" : "(optional)";
+  }
+  if (messageField && !otherSelected) {
+    messageField.removeAttribute("aria-invalid");
+    messageField.classList.remove("is-invalid");
+  }
 }
 
 function getShortTopicLabel(topic) {
