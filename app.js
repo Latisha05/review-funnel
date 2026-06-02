@@ -329,7 +329,7 @@ async function generateUniqueReview(mode, topics) {
     const generated = await generateWithOllama(mode, topics, attempt);
     const candidate = sanitizeReview(generated);
 
-    if (candidate && isReviewLengthValid(candidate, mode) && !isRedundantReview(candidate)) {
+    if (candidate && isReviewLengthValid(candidate, mode) && isReviewQualityAcceptable(candidate)) {
       rememberGeneratedReview(candidate);
       return candidate;
     }
@@ -359,7 +359,7 @@ async function generateWithOllama(mode, topics, attempt = 0) {
   };
 
   const topicInstructions = topics.length 
-    ? `Praise these selected aspects: ${topics.join(", ")}. Keep the selected aspect wording recognizable, especially exact ideas like "attention to detail". Combine them into ONE compact impact statement instead of listing each aspect separately.`
+    ? `Praise these selected aspects: ${topics.join(", ")}. Treat chip labels as ideas, not exact phrases to force into the review; for example, write "clear process" instead of the awkward phrase "process clarity". Keep natural exact ideas like "attention to detail" when they fit. Combine the selected ideas into ONE compact impact statement instead of listing each aspect separately.`
     : "CRITICAL: The customer has NOT selected any specific features yet. You MUST NOT mention any specific service outcomes (such as B2B project delivery speed, ROI goals, web design, leads count, transparent reporting, or WhatsApp automation setups). Write a general recommendation focusing purely on overall satisfaction with EESWEB as a B2B partner, professional teamwork, and a very good overall partnership experience.";
   const recentOpenings = recentReviews
     .map((review) => review.split(/[.!?]/)[0])
@@ -377,6 +377,8 @@ async function generateWithOllama(mode, topics, attempt = 0) {
     `Style angle: ${styleAngle}.`,
     "Keep it natural, human, specific, and B2B digital-agency oriented. Do not write about food, dining, or restaurants.",
     "The selected topics are context, not permission to make the review long. Mention impact briefly and keep the final text tight.",
+    "Before answering, silently check whether the review sounds like something a real client would actually post. Rewrite it if any sentence feels awkward, circular, redundant, or mechanically generated.",
+    "Do not use clumsy phrases like 'showed clearly in the final result', 'process clarity showed clearly', or any wording that repeats the same idea in different words.",
     "Do not use the same opening, ending, sentence shape, or impact phrase as prior suggestions.",
     "Avoid template phrases like 'loved working with', 'really lifted the outcome', and 'made a real difference' unless they are not present in recent suggestions.",
     "Do not put quotes around the review.",
@@ -444,7 +446,7 @@ function buildCompactFallbackReview(mode, topics, tone) {
   const start = getFallbackStartIndex(options.length, topics, tone, mode);
   for (let index = 0; index < options.length; index += 1) {
     const candidate = trimReviewToMode(options[(start + index) % options.length], mode);
-    if (!isRedundantReview(candidate)) {
+    if (isReviewQualityAcceptable(candidate)) {
       return candidate;
     }
   }
@@ -519,6 +521,9 @@ function getTopicPhraseVariants(topicSet) {
   const second = topicSet[1] || topicSet[0];
   const third = topicSet[2] || topicSet[0];
   const handledPhrase = topicSet.length > 1 ? `${first} and ${second} were` : `${first} was`;
+  const practicalPhrase = third === "process clarity"
+    ? "their clear process made the project easy to follow"
+    : `the work reflected ${third} in a practical way`;
   return [
     {
       inline: `${joined} stood out`,
@@ -537,8 +542,8 @@ function getTopicPhraseVariants(topicSet) {
       highlight: `The team brought ${joined} into the whole project.`,
     },
     {
-      inline: `${third} showed clearly in the final result`,
-      highlight: `${capitalizeFirst(third)} showed clearly in the final result.`,
+      inline: practicalPhrase,
+      highlight: `${capitalizeFirst(practicalPhrase)}.`,
     },
     {
       inline: `we noticed ${joined} throughout the process`,
@@ -694,6 +699,21 @@ function isRedundantReview(candidate) {
     const score = getSimilarityScore(normalizedCandidate, normalizeForSimilarity(previousReview));
     return score >= config.duplicateSimilarityLimit;
   });
+}
+
+function isReviewQualityAcceptable(candidate) {
+  return !hasAwkwardReviewWording(candidate) && !isRedundantReview(candidate);
+}
+
+function hasAwkwardReviewWording(candidate) {
+  const normalized = String(candidate || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const blockedPatterns = [
+    /\bprocess clarity and process clarity\b/,
+    /\b(\w+(?:\s+\w+)?) and \1 were handled\b/,
+    /\bshowed clearly in the final result\b/,
+    /\bprocess clarity showed clearly\b/,
+  ];
+  return blockedPatterns.some((pattern) => pattern.test(normalized));
 }
 
 function getSimilarityScore(firstReview, secondReview) {
