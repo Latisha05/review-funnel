@@ -2083,6 +2083,14 @@ body[data-step="rating"] .rating-grid {
   margin-top: -3px;
 }
 
+.field-optional {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .grid-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   column-gap: 12px;

@@ -76,7 +76,7 @@
                 <div class="stat-data">
                   <span class="stat-label">Total QR Scans</span>
                   <strong class="stat-value" id="totalScans">0</strong>
-                  <span class="stat-trend" id="scanSourceLabel">Tracked from /r links</span>
+                  <span class="stat-trend" id="scanSourceLabel">All time</span>
                 </div>
               </div>
               <div class="stat-card">
@@ -218,15 +218,15 @@
                   </div>
                   <div class="field-group">
                     <label for="regQrLabel">Label</label>
-                    <input id="regQrLabel" placeholder="Website footer QR" required />
+                    <input id="regQrLabel" placeholder="e.g. Main entrance QR" required />
                   </div>
                   <div class="field-group">
                     <label for="regBranchName">Branch</label>
                     <input id="regBranchName" placeholder="Main" />
                   </div>
                   <div class="field-group">
-                    <label for="regStaff">Staff, source, or campaign</label>
-                    <input id="regStaff" placeholder="Support desk, website footer, campaign A" />
+                    <label for="regStaff">Staff / source <span class="field-optional">(optional)</span></label>
+                    <input id="regStaff" placeholder="e.g. Rahul, Table 5, Website footer" />
                   </div>
                   <button class="primary-button" type="submit">Create tracker</button>
                   <p id="qrCreationStatus" class="form-status"></p>

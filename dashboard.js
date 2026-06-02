@@ -173,6 +173,7 @@ function renderOverview() {
   elements.dynamicQrUrl.value = qrUrl;
   elements.openQrLink.href = qrUrl || "/";
 
+  prefillQrForm();
   renderRatingDistribution(ratings);
 }
 
@@ -379,6 +380,22 @@ async function saveSettings(event) {
     setFormStatus("Settings saved.");
   } catch (error) {
     setFormStatus(error.message, true);
+  }
+}
+
+function prefillQrForm() {
+  const idField = document.querySelector("#regQrId");
+  const labelField = document.querySelector("#regQrLabel");
+  const branchField = document.querySelector("#regBranchName");
+  // Only prefill if the user hasn't typed anything yet
+  if (idField && !idField.value) {
+    idField.value = dbState.settings.QR_CODE_ID || "";
+  }
+  if (labelField && !labelField.value) {
+    labelField.value = dbState.settings.QR_CODE_LABEL || "";
+  }
+  if (branchField && !branchField.value) {
+    branchField.value = dbState.settings.BRANCH_NAME || "";
   }
 }
 
