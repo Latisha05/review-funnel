@@ -9,7 +9,7 @@ id = "e8c0d6b708f046cbaf251010851902cd"
 [vars]
 APP_NAME = "Review Funnel"
 APP_BUSINESS_NAME = "EESWEB"
-APP_BASE_URL = "https://review-funnel.pages.dev"
+APP_BASE_URL = "https://review-funnel-7h2.pages.dev"
 BUSINESS_ID = "eesweb"
 BRANCH_ID = "main"
 BRANCH_NAME = "Main"
