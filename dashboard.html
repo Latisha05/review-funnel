@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Review Funnel Dashboard</title>
+    <meta name="description" content="Dashboard for QR scans, ratings, private feedback, QR links, and review settings." />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="dashboard-body">
+    <div class="dashboard-container">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-logo">RF</div>
+          <div class="brand-text">
+            <h2>ReviewFunnel</h2>
+            <span id="sidebarBusinessName">Dashboard</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-menu" aria-label="Dashboard navigation">
+          <button class="menu-item is-active" data-page="overview" type="button">Overview</button>
+          <button class="menu-item" data-page="feedback" type="button">
+            Feedback Inbox
+            <span class="badge badge-danger" id="feedbackCountBadge">0</span>
+          </button>
+          <button class="menu-item" data-page="qrcodes" type="button">QR Links</button>
+          <button class="menu-item" data-page="reviews" type="button">Review Events</button>
+          <button class="menu-item" data-page="settings" type="button">Settings</button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="connection-status badge" id="connectionBadge">
+            <span class="status-dot"></span>
+            <span class="status-text">Connecting</span>
+          </div>
+          <a class="view-live-button" href="/" target="_blank" rel="noreferrer">Open review page</a>
+        </div>
+      </aside>
+
+      <main class="dashboard-main">
+        <header class="dashboard-navbar">
+          <button class="mobile-menu-button" id="mobileMenuButton" type="button" aria-label="Open dashboard menu">Menu</button>
+          <div class="navbar-left">
+            <p class="breadcrumb">Admin Panel</p>
+            <h1 id="pageTitle">Overview</h1>
+          </div>
+          <button class="secondary-button compact-button" id="refreshDataButton" type="button">Refresh</button>
+        </header>
+
+        <div class="dashboard-content">
+          <section class="dashboard-view is-active" id="view-overview">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-data">
+                  <span class="stat-label">Total QR Scans</span>
+                  <strong class="stat-value" id="totalScans">0</strong>
+                  <span class="stat-trend" id="scanSourceLabel">Tracked from /r links</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-data">
+                  <span class="stat-label">Average Rating</span>
+                  <strong class="stat-value" id="avgRating">0.0</strong>
+                  <span class="stat-trend" id="totalRatingsCount">0 ratings logged</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-data">
+                  <span class="stat-label">Google Review Clicks</span>
+                  <strong class="stat-value" id="reviewClicks">0</strong>
+                  <span class="stat-trend" id="conversionPercentage">0% of positive ratings</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-data">
+                  <span class="stat-label">Private Feedback</span>
+                  <strong class="stat-value" id="negativeFeedback">0</strong>
+                  <span class="stat-trend" id="negativePercentage">0 low ratings routed privately</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="charts-row tables-layout">
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div>
+                    <h3>Latest ratings</h3>
+                    <span class="subtitle">Data sent from the mobile review page</span>
+                  </div>
+                </div>
+                <div class="table-wrapper">
+                  <table class="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Rating</th>
+                        <th>QR</th>
+                        <th>Created</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ratingsTable"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div>
+                    <h3>Dynamic QR target</h3>
+                    <span class="subtitle">Use this URL in a dynamic QR provider</span>
+                  </div>
+                </div>
+                <div class="copy-field">
+                  <input id="dynamicQrUrl" readonly aria-label="Dynamic QR URL" />
+                  <button class="secondary-button" id="copyQrButton" type="button">Copy</button>
+                </div>
+                <a class="view-live-button light-button" id="openQrLink" href="/r/eesweb-test" target="_blank" rel="noreferrer">Open QR link</a>
+              </div>
+            </div>
+          </section>
+
+          <section class="dashboard-view" id="view-feedback">
+            <div class="feedback-control-bar">
+              <div class="search-field">
+                <input id="feedbackSearch" type="text" placeholder="Search feedback, name, phone, or issue" />
+              </div>
+            </div>
+            <div class="feedback-cards-grid" id="feedbackCardsList"></div>
+          </section>
+
+          <section class="dashboard-view" id="view-qrcodes">
+            <div class="qr-layout-grid">
+              <div class="chart-container grid-span-2">
+                <div class="chart-header">
+                  <div>
+                    <h3>QR registry</h3>
+                    <span class="subtitle">Create one link per branch, staff member, source, or campaign</span>
+                  </div>
+                </div>
+                <div class="table-wrapper">
+                  <table class="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>QR Link</th>
+                        <th>Label</th>
+                        <th>Branch</th>
+                        <th>Source / campaign</th>
+                        <th>Scans</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="qrCodesRegistryTable"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div>
+                    <h3>Create QR tracker</h3>
+                    <span class="subtitle">No QR image is generated here, only the dynamic URL</span>
+                  </div>
+                </div>
+                <form id="createQrForm" class="sidebar-form">
+                  <div class="field-group">
+                    <label for="regQrId">QR code ID</label>
+                    <input id="regQrId" placeholder="eesweb-main" required />
+                  </div>
+                  <div class="field-group">
+                    <label for="regQrLabel">Label</label>
+                    <input id="regQrLabel" placeholder="Website footer QR" required />
+                  </div>
+                  <div class="field-group">
+                    <label for="regBranchName">Branch</label>
+                    <input id="regBranchName" placeholder="Main" />
+                  </div>
+                  <div class="field-group">
+                    <label for="regStaff">Staff, source, or campaign</label>
+                    <input id="regStaff" placeholder="Support desk, website footer, campaign A" />
+                  </div>
+                  <button class="primary-button" type="submit">Create tracker</button>
+                  <p id="qrCreationStatus" class="form-status"></p>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <section class="dashboard-view" id="view-reviews">
+            <div class="chart-container">
+              <div class="chart-header">
+                <div>
+                  <h3>Review events</h3>
+                  <span class="subtitle">Saved only when the customer clicks the review action or marks it posted</span>
+                </div>
+              </div>
+              <div class="feedback-cards-grid" id="reviewEventsList"></div>
+            </div>
+          </section>
+
+          <section class="dashboard-view" id="view-settings">
+            <form id="settingsForm" class="settings-layout-form">
+              <div class="settings-grid-layout">
+                <div class="chart-container">
+                  <div class="chart-header">
+                    <div>
+                      <h3>Business setup</h3>
+                      <span class="subtitle">Clone-friendly identity and Google profile settings</span>
+                    </div>
+                  </div>
+                  <div class="form-body">
+                    <div class="field-group">
+                      <label for="businessNameInput">Business name</label>
+                      <input id="businessNameInput" name="APP_BUSINESS_NAME" />
+                    </div>
+                    <div class="field-group">
+                      <label for="baseUrlInput">Base URL</label>
+                      <input id="baseUrlInput" name="APP_BASE_URL" />
+                    </div>
+                    <div class="dashboard-grid grid-2">
+                      <div class="field-group">
+                        <label for="businessIdInput">Business ID</label>
+                        <input id="businessIdInput" name="BUSINESS_ID" />
+                      </div>
+                      <div class="field-group">
+                        <label for="branchIdInput">Branch ID</label>
+                        <input id="branchIdInput" name="BRANCH_ID" />
+                      </div>
+                    </div>
+                    <div class="dashboard-grid grid-2">
+                      <div class="field-group">
+                        <label for="branchNameInput">Branch name</label>
+                        <input id="branchNameInput" name="BRANCH_NAME" />
+                      </div>
+                      <div class="field-group">
+                        <label for="qrCodeInput">Default QR ID</label>
+                        <input id="qrCodeInput" name="QR_CODE_ID" />
+                      </div>
+                    </div>
+                    <div class="field-group">
+                      <label for="qrLabelInput">Default QR label</label>
+                      <input id="qrLabelInput" name="QR_CODE_LABEL" />
+                    </div>
+                    <div class="field-group">
+                      <label for="placeIdInput">Google Place ID</label>
+                      <input id="placeIdInput" name="GOOGLE_PLACE_ID" placeholder="Optional while testing" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chart-container">
+                  <div class="chart-header">
+                    <div>
+                      <h3>AI review voice</h3>
+                      <span class="subtitle">This controls the generated review style on mobile</span>
+                    </div>
+                  </div>
+                  <div class="form-body">
+                    <div class="dashboard-grid grid-2">
+                      <div class="field-group">
+                        <label for="aiToneSelector">Default tone</label>
+                        <select id="aiToneSelector" name="AI_TONE">
+                          <option value="Professional">Professional</option>
+                          <option value="Appreciative">Appreciative</option>
+                          <option value="Enthusiastic">Enthusiastic</option>
+                        </select>
+                      </div>
+                      <div class="field-group">
+                        <label for="aiLengthSelector">Default length</label>
+                        <select id="aiLengthSelector" name="AI_LENGTH">
+                          <option value="short">Short</option>
+                          <option value="medium">Medium</option>
+                          <option value="long">Long</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="field-group">
+                      <label for="systemPromptInput">System prompt</label>
+                      <textarea id="systemPromptInput" name="REVIEW_SYSTEM_PROMPT" rows="7"></textarea>
+                    </div>
+                    <div class="dashboard-grid grid-2">
+                      <div class="field-group">
+                        <label for="ollamaBaseUrlInput">Ollama URL</label>
+                        <input id="ollamaBaseUrlInput" name="OLLAMA_BASE_URL" />
+                      </div>
+                      <div class="field-group">
+                        <label for="ollamaModelInput">Ollama model</label>
+                        <input id="ollamaModelInput" name="OLLAMA_MODEL" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chart-container">
+                  <div class="chart-header">
+                    <div>
+                      <h3>Review parameters</h3>
+                      <span class="subtitle">One short phrase per line</span>
+                    </div>
+                  </div>
+                  <div class="form-body">
+                    <div class="field-group">
+                      <label for="reviewTopicsInput">Positive checkboxes</label>
+                      <textarea id="reviewTopicsInput" name="REVIEW_TOPICS" rows="7"></textarea>
+                    </div>
+                    <div class="field-group">
+                      <label for="feedbackTopicsInput">Private feedback checkboxes</label>
+                      <textarea id="feedbackTopicsInput" name="FEEDBACK_TOPICS" rows="7"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-actions-footer">
+                <button class="primary-button save-settings-btn" type="submit">Save settings</button>
+                <span id="dashboardStatus" class="dashboard-status-label" role="status"></span>
+              </div>
+            </form>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+  </body>
+</html>

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Review Funnel</title>
+    <meta
+      name="description"
+      content="A QR-based review funnel that routes happy customers to Google and unhappy customers to private feedback."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="review-panel" aria-live="polite">
+        <div class="brand-row">
+          <div class="brand-mark" aria-hidden="true">RF</div>
+          <div>
+            <p class="eyebrow">Review Funnel</p>
+            <h1 id="businessName">How was your experience today?</h1>
+          </div>
+        </div>
+
+        <div id="ratingStep" class="step is-active">
+          <p class="rating-kicker">Tap a star to continue</p>
+          <div class="rating-grid" role="radiogroup" aria-label="Choose a star rating">
+            <button class="rating-button" type="button" data-rating="1" aria-label="1 star">
+              <span aria-hidden="true"></span>
+              <strong>1</strong>
+            </button>
+            <button class="rating-button" type="button" data-rating="2" aria-label="2 stars">
+              <span aria-hidden="true"></span>
+              <strong>2</strong>
+            </button>
+            <button class="rating-button" type="button" data-rating="3" aria-label="3 stars">
+              <span aria-hidden="true"></span>
+              <strong>3</strong>
+            </button>
+            <button class="rating-button" type="button" data-rating="4" aria-label="4 stars">
+              <span aria-hidden="true"></span>
+              <strong>4</strong>
+            </button>
+            <button class="rating-button" type="button" data-rating="5" aria-label="5 stars">
+              <span aria-hidden="true"></span>
+              <strong>5</strong>
+            </button>
+          </div>
+        </div>
+
+        <div id="positiveStep" class="step">
+          <div class="step-heading">
+            <p class="eyebrow">Review suggestion</p>
+            <h2>Copy, edit, then post on Google</h2>
+          </div>
+
+          <div class="review-controls">
+            <div class="field-group">
+              <label for="reviewMode">Review length</label>
+              <select id="reviewMode">
+                <option value="short">Short</option>
+                <option value="medium" selected>Medium</option>
+                <option value="long">Long</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="reviewTone">Review tone</label>
+              <select id="reviewTone">
+                <option value="Professional" selected>Professional</option>
+                <option value="Enthusiastic">Enthusiastic</option>
+                <option value="Appreciative">Appreciative</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="positiveTopics" class="chip-grid" aria-label="Review topics">
+          </div>
+
+          <textarea id="reviewText" rows="6" aria-label="Generated review"></textarea>
+
+          <div class="action-row">
+            <button id="copyReviewButton" class="secondary-button" type="button">Copy review</button>
+            <button id="regenerateButton" class="secondary-button" type="button">Generate another</button>
+          </div>
+
+          <button id="googleReviewButton" class="primary-button" type="button">
+            Post review on Google
+          </button>
+        </div>
+
+        <form id="feedbackStep" class="step">
+          <div class="step-heading">
+            <p class="eyebrow">Private feedback</p>
+            <h2>Tell us what went wrong</h2>
+          </div>
+
+          <div id="feedbackTopics" class="chip-grid" aria-label="Feedback categories">
+          </div>
+
+          <div class="field-group">
+            <label for="feedbackMessage">Feedback message</label>
+            <textarea id="feedbackMessage" name="message" rows="5" required></textarea>
+          </div>
+
+          <div class="form-grid">
+            <div class="field-group">
+              <label for="customerName">Name</label>
+              <input id="customerName" name="name" autocomplete="name" />
+            </div>
+            <div class="field-group">
+              <label for="customerPhone">Phone</label>
+              <input id="customerPhone" name="phone" autocomplete="tel" inputmode="tel" />
+            </div>
+          </div>
+
+          <label class="inline-check">
+            <input id="callbackRequest" name="callback" type="checkbox" />
+            I would like the team to follow up
+          </label>
+
+          <button class="primary-button" type="submit">Send feedback privately</button>
+        </form>
+
+        <div id="thankYouStep" class="step">
+          <div class="success-icon" aria-hidden="true"></div>
+          <h2>Thank you</h2>
+          <p id="thankYouMessage" class="lead">
+            Your feedback has been saved. We appreciate you taking a moment.
+          </p>
+          <div id="reviewInstructions" class="instruction-box">
+            <strong>You will be redirected in <span id="redirectCountdown">5</span> seconds.</strong>
+            <p class="instruction-note">Your review is copied. On Google:</p>
+            <ol>
+              <li>Select the star rating.</li>
+              <li>Paste the review and hit Post.</li>
+            </ol>
+          </div>
+          <button id="postedButton" class="secondary-button" type="button">I posted it</button>
+          <button id="startOverButton" class="link-button" type="button">Start over</button>
+        </div>
+
+        <p id="toast" class="toast" role="status"></p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
