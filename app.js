@@ -518,6 +518,7 @@ function getTopicPhraseVariants(topicSet) {
   const first = topicSet[0];
   const second = topicSet[1] || topicSet[0];
   const third = topicSet[2] || topicSet[0];
+  const handledPhrase = topicSet.length > 1 ? `${first} and ${second} were` : `${first} was`;
   return [
     {
       inline: `${joined} stood out`,
@@ -528,8 +529,8 @@ function getTopicPhraseVariants(topicSet) {
       highlight: `Their ${joined} made the work easier.`,
     },
     {
-      inline: `${first} and ${second} were handled really well`,
-      highlight: `${capitalizeFirst(first)} and ${second} were handled really well.`,
+      inline: `${handledPhrase} handled really well`,
+      highlight: `${capitalizeFirst(handledPhrase)} handled really well.`,
     },
     {
       inline: `the team brought ${joined} into the whole project`,
