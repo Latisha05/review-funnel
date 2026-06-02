@@ -315,19 +315,37 @@ async function handleEvent(body) {
     throw new Error("Invalid collection.");
   }
 
-  const publicConfig = getPublicConfig(qrCodeId);
+  const requestedQrCodeId = body.payload?.qrCodeId || "";
+  const publicConfig = getPublicConfig(requestedQrCodeId);
+  const qrCode = getQrCodeFromLocalDb(requestedQrCodeId || publicConfig.qrCodeId);
   const payload = {
     ...body.payload,
     type: body.type,
     businessId: body.payload?.businessId || publicConfig.businessId,
-    branchId: body.payload?.branchId || publicConfig.branchId,
-    qrCodeId: body.payload?.qrCodeId || publicConfig.qrCodeId,
+    branchId: body.payload?.branchId || qrCode?.branchId || publicConfig.branchId,
+    branchName: body.payload?.branchName || qrCode?.branchName || publicConfig.branchName,
+    qrCodeId: requestedQrCodeId || publicConfig.qrCodeId,
+    qrLabel: body.payload?.qrLabel || qrCode?.label || publicConfig.qrLabel,
+    source: body.payload?.source || qrCode?.source || qrCode?.staff || publicConfig.qrSource || "",
+    campaign: body.payload?.campaign || qrCode?.campaign || publicConfig.campaign || "",
+    status: body.collection === "feedback" ? body.payload?.status || "pending" : body.payload?.status,
     userAgent: body.userAgent || "",
     createdAt: new Date().toISOString(),
   };
 
-  const document = await createFirestoreDocument(body.collection, payload);
-  return { ok: true, path: document.name };
+  let documentPath = "";
+  if (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY) {
+    try {
+      const document = await createFirestoreDocument(body.collection, payload);
+      documentPath = document.name;
+    } catch (error) {
+      console.warn("Firestore event save failed, using local fallback:", error.message);
+    }
+  }
+
+  const localPath = saveToLocalJson(body.collection, payload);
+  documentPath = documentPath || localPath;
+  return { ok: true, path: documentPath };
 }
 
 async function bootstrapFirestore() {
@@ -981,45 +999,6 @@ function hashClientIp(request) {
   return crypto.createHash("sha256").update(ip).digest("hex").slice(0, 16);
 }
 
-// Modify handleEvent to support local JSON db fallback
-const originalHandleEvent = handleEvent;
-handleEvent = async function(body) {
-  if (!body || !allowedCollections.has(body.collection)) {
-    throw new Error("Invalid collection.");
-  }
-
-  const requestedQrCodeId = body.payload?.qrCodeId || "";
-  const publicConfig = getPublicConfig(requestedQrCodeId);
-  const qrCode = getQrCodeFromLocalDb(requestedQrCodeId || publicConfig.qrCodeId);
-  const payload = {
-    ...body.payload,
-    type: body.type,
-    businessId: body.payload?.businessId || publicConfig.businessId,
-    branchId: body.payload?.branchId || qrCode?.branchId || publicConfig.branchId,
-    branchName: body.payload?.branchName || qrCode?.branchName || publicConfig.branchName,
-    qrCodeId: requestedQrCodeId || publicConfig.qrCodeId,
-    qrLabel: body.payload?.qrLabel || qrCode?.label || publicConfig.qrLabel,
-    source: body.payload?.source || qrCode?.source || qrCode?.staff || publicConfig.qrSource || "",
-    campaign: body.payload?.campaign || qrCode?.campaign || publicConfig.campaign || "",
-    status: body.collection === "feedback" ? body.payload?.status || "pending" : body.payload?.status,
-    userAgent: body.userAgent || "",
-    createdAt: new Date().toISOString(),
-  };
-
-  let documentPath = "";
-  if (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY) {
-    try {
-      const document = await createFirestoreDocument(body.collection, payload);
-      documentPath = document.name;
-    } catch (error) {
-      console.warn("Firestore event save failed, using local dashboard store:", error.message);
-    }
-  }
-
-  const localPath = saveToLocalJson(body.collection, payload);
-  documentPath = documentPath || localPath;
-  return { ok: true, path: documentPath };
-};
 
 function bootstrapLocalDbIfEmpty() {
   const dbPath = path.join(rootDir, "data_store.json");

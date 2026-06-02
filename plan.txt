@@ -1,0 +1,528 @@
+
+ Workflow
+
+ 1. Project Overview
+
+The software is a QR-based AI-powered Review Funnel and Reputation Management platform designed for businesses such as:
+
+* Restaurants
+* Cafes
+* Car Showrooms
+* Hotels
+* Salons
+* Clinics
+* Gyms
+* Retail Stores
+
+The main goal is to:
+
+* Increase positive Google reviews
+* Capture negative feedback internally
+* Improve customer satisfaction
+* Automate review collection
+* Provide AI-generated review suggestions
+* Integrate WhatsApp communication and alerts
+
+
+
+ 2. Core Concept
+
+Every business receives:
+
+* Unique QR Code
+* Unique Review Funnel Link
+* Dashboard Access
+
+When customers scan the QR code:
+
+1. They first rate the experience using stars
+2. Based on the rating:
+   - Positive users are redirected to Google Reviews
+   - Negative users are redirected to internal feedback forms
+3. AI helps generate review suggestions
+4. WhatsApp automations are triggered
+
+
+
+ 3. High-Level Workflow
+
+Customer scans QR
+↓
+Landing Page Opens
+↓
+Customer Gives Star Rating
+↓
+IF Rating ≥ 4
+→ AI Review Suggestion
+→ Redirect to Google Review Page
+→ Send Thank You WhatsApp
+
+IF Rating ≤ 3
+→ Internal Feedback Form
+→ Save Complaint
+→ Notify Business Owner on WhatsApp
+→ Optional AI Recovery Flow
+
+
+
+ 4. User Roles
+
+ A. Super Admin
+
+Platform Owner
+
+Permissions:
+* Manage all businesses
+* View all analytics
+* Manage subscriptions
+* Enable/disable features
+* View review statistics globally
+
+
+
+ B. Business Owner/Admin
+
+Permissions:
+* Login dashboard
+* Download QR codes
+* View reviews & feedback
+* View analytics
+* Manage branches
+* Configure WhatsApp settings
+* Configure AI review tone
+* Add staff members
+
+
+
+ C. Staff (Optional)
+
+Permissions:
+* Limited dashboard access
+* View assigned feedback
+* Resolve customer complaints
+
+
+
+ 5. QR Code System
+
+Each business gets:
+
+ Dynamic QR Code
+
+Example:
+https://review.domain.com/business-name
+
+OR
+
+https://review.domain.com/ravet-branch/table-12
+
+
+
+ 6. QR Tracking System
+
+Each QR can track:
+
+* Branch
+* Table
+* Staff
+* Counter
+* Visit source
+* Scan count
+* Device type
+* Time & date
+
+Example:
+Table 5 → Waiter Rahul
+
+If customer scans that QR:
+* Review gets linked to that staff member
+
+
+
+ 7. Landing Page Flow
+
+ First Screen
+
+UI:
+How was your experience today?
+
+⭐ ⭐ ⭐ ⭐ ⭐
+
+Requirements:
+* Mobile responsive
+* Fast loading
+* Single-click rating system
+
+
+
+ 8. Rating Logic
+
+ Positive Ratings (4⭐ & 5⭐)
+
+Flow:
+1. Show AI-generated review suggestions
+2. Allow customer to:
+   - Copy review
+   - Edit review
+   - Generate another review
+3. Redirect to Google Review page
+
+
+
+ Negative Ratings (1⭐–3⭐)
+
+DO NOT redirect to Google.
+
+Instead:
+1. Open feedback form
+2. Capture complaint internally
+3. Notify owner immediately
+
+
+
+ 9. AI Review Suggestion System
+
+ Goal
+
+Help users quickly post high-quality positive reviews.
+
+
+
+ Workflow
+
+Customer selects:
+* Star rating
+* Optional keywords/categories
+
+Example categories:
+* Food
+* Staff
+* Service
+* Ambience
+* Cleanliness
+* Pricing
+* Delivery Speed
+
+
+
+ AI Prompt Logic
+
+Generate:
+* Natural
+* Human-like
+* Unique
+* Non-spammy reviews
+
+Avoid:
+* Duplicate reviews
+* Robotic language
+* Keyword stuffing
+
+
+
+ Example AI Output
+
+Amazing food quality and excellent staff service. Highly recommended place for family dining.
+
+
+
+ 10. AI Review Modes
+
+ Short Review
+50–100 characters
+
+ Medium Review
+100–250 characters
+
+ Long Review
+250–500 characters
+
+
+
+ 11. AI Review Customization
+
+Business owners can choose:
+
+* Formal tone
+* Friendly tone
+* Luxury tone
+* Casual tone
+
+
+
+ 12. Google Review Redirect
+
+After review generation:
+
+Button:
+Post Review on Google
+
+Redirect:
+Google Maps Review URL
+
+
+
+ 13. Internal Negative Feedback System
+
+If rating ≤ 3:
+
+Show:
+We are sorry for your experience.
+Please tell us what went wrong.
+
+
+
+ 14. Feedback Form Fields
+
+Required:
+* Feedback message
+
+Optional:
+* Customer name
+* Phone number
+* Email
+* Callback request
+
+
+
+ 15. Negative Feedback Categories
+
+Checkboxes:
+* Staff behavior
+* Food quality
+* Delay
+* Cleanliness
+* Wrong order
+* Pricing issue
+* Service issue
+
+
+
+ 16. WhatsApp Integration Workflow
+
+ A. Owner Notifications
+
+When negative review submitted:
+
+Send WhatsApp message instantly.
+
+Example:
+
+⚠️ Negative Feedback Alert
+
+Branch: Ravet
+Rating: ⭐⭐
+
+Issue:
+Food was cold and delayed.
+
+Customer Contact:
+98XXXXXX12
+
+
+
+ B. Customer Thank You Message
+
+After positive review:
+
+Thank you for visiting us ❤️
+Your feedback means a lot.
+
+
+
+ C. Review Reminder
+
+If Google review not completed:
+
+Send reminder after X hours.
+
+Example:
+
+Hi 👋
+You forgot to share your review.
+It helps our business a lot ❤️
+
+
+
+ 17. WhatsApp API Integration
+
+ 18. Analytics Dashboard
+
+Dashboard should display:
+
+* Total scans
+* Total ratings
+* Positive ratings
+* Negative ratings
+* Google review conversion rate
+* Average rating
+* Branch-wise analytics
+* Staff-wise analytics
+* Daily/weekly/monthly reports
+
+
+
+ 19. AI Sentiment Analysis
+
+Analyze negative feedback automatically.
+
+Detect:
+* Angry customer
+* Staff issue
+* Delivery issue
+* Hygiene complaint
+* Product quality issue
+
+
+
+ 20. Smart Recovery Flow
+
+If customer unhappy:
+
+Offer:
+* Manager callback
+* Discount coupon
+* Free revisit offer
+
+Optional WhatsApp automation:
+
+We are sorry for the inconvenience 🙏
+Would you like a callback from our manager?
+
+
+
+ 21. Multi-Branch System
+
+Support:
+* Multiple branches
+* Multiple dashboards
+* Branch-specific analytics
+* Branch-specific QR codes
+
+
+
+ 22. Staff Performance Tracking
+
+Each QR linked to:
+* Waiter
+* Sales executive
+* Receptionist
+
+Track:
+* Positive reviews per staff
+* Negative feedback per staff
+* Performance score
+
+
+
+ 23. Subscription System
+
+Recommended SaaS model.
+
+plans:
+
+ Basic
+* 1 branch
+* Limited scans
+
+ Pro
+* Multi-branch
+* AI reviews
+* WhatsApp integration
+
+ Enterprise
+* Unlimited branches
+* API access
+* White-label solution
+
+
+
+ 24. Tech 
+
+ Frontend
+
+ Backend
+
+ Database
+
+ Authentication
+
+ Hosting
+
+Frontend:
+
+Backend:
+
+ AI Integration
+
+ WhatsApp
+
+
+
+
+ 25. Security Requirements
+
+Must include:
+* Rate limiting
+* Spam protection
+* Duplicate scan protection
+* Secure API endpoints
+* CAPTCHA (optional)
+* Data encryption
+
+
+
+ 26. Important Compliance Notes
+
+The platform should:
+* Encourage genuine reviews
+* Avoid fake reviews
+* Avoid forced review manipulation
+* Avoid automatic review posting
+
+System should:
+* Redirect satisfied customers to Google
+* Capture dissatisfied customer feedback internally
+
+This keeps the system scalable and safer for long-term Google Business compliance.
+
+
+
+ 27. Future Features (Optional)
+
+* NFC Tap Reviews
+* Voice feedback
+* AI call recovery
+* CRM integration
+* Telegram alerts
+* Email automation
+* Loyalty rewards
+* Review gamification
+* Spin wheel coupons
+* AI response generator for Google reviews
+
+
+
+ 28. Suggested Development Phases
+
+ Phase 1
+* QR system
+* Rating flow
+* Google redirect
+* Feedback forms
+
+ Phase 2
+* Dashboard
+* Analytics
+* Multi-branch support
+
+ Phase 3
+* WhatsApp integration
+* AI review generation
+* AI sentiment analysis
+
+ Phase 4
+* SaaS subscriptions
+* White-label support
+* Enterprise APIs
+

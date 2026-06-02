@@ -172,6 +172,20 @@ function renderOverview() {
   const qrUrl = dbState.derived.dynamicQrUrl || dbState.derived.localDynamicQrUrl || "";
   elements.dynamicQrUrl.value = qrUrl;
   elements.openQrLink.href = qrUrl || "/";
+
+  renderRatingDistribution(ratings);
+}
+
+function renderRatingDistribution(ratings) {
+  const max = ratings.length || 1;
+  for (let star = 1; star <= 5; star++) {
+    const count = ratings.filter((r) => Number(r.rating) === star).length;
+    const pct = Math.round((count / max) * 100);
+    const fill = document.getElementById(`dist${star}`);
+    const counter = document.getElementById(`distCount${star}`);
+    if (fill) fill.style.width = `${pct}%`;
+    if (counter) counter.textContent = count;
+  }
 }
 
 function renderRatingsTable() {

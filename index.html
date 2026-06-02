@@ -8,6 +8,9 @@
       name="description"
       content="A QR-based review funnel that routes happy customers to Google and unhappy customers to private feedback."
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -82,7 +85,8 @@
             <button id="regenerateButton" class="secondary-button" type="button">Generate another</button>
           </div>
 
-          <button id="googleReviewButton" class="primary-button" type="button">
+          <button id="googleReviewButton" class="primary-button google-button" type="button">
+            <span class="google-g" aria-hidden="true">G</span>
             Post review on Google
           </button>
         </div>
@@ -127,14 +131,14 @@
             Your feedback has been saved. We appreciate you taking a moment.
           </p>
           <div id="reviewInstructions" class="instruction-box">
-            <strong>You will be redirected in <span id="redirectCountdown">5</span> seconds.</strong>
-            <p class="instruction-note">Your review is copied. On Google:</p>
+            <strong>Opening Google in <span id="redirectCountdown">5</span> seconds…</strong>
+            <p class="instruction-note">Your review is already copied. On Google, just:</p>
             <ol>
-              <li>Select the star rating.</li>
-              <li>Paste the review and hit Post.</li>
+              <li>Tap the stars.</li>
+              <li>Long-press the text box → Paste → Post.</li>
             </ol>
           </div>
-          <button id="postedButton" class="secondary-button" type="button">I posted it</button>
+          <button id="postedButton" class="secondary-button" type="button">I posted it ✓</button>
           <button id="startOverButton" class="link-button" type="button">Start over</button>
         </div>
 
