@@ -78,22 +78,22 @@ label {
   content: "";
   position: absolute;
   inset: 0 0 auto;
-  height: 110px;
+  height: 240px;
   z-index: 0;
   background:
-    linear-gradient(135deg, rgba(18, 61, 58, 0.12), rgba(197, 138, 42, 0.1) 58%, transparent);
+    radial-gradient(120% 90% at 0% 0%, rgba(18, 61, 58, 0.14), rgba(197, 138, 42, 0.08) 40%, transparent 70%);
   pointer-events: none;
   transition: background 400ms ease;
 }
 
 body[data-step="feedback"] .review-panel::before {
   background:
-    linear-gradient(135deg, rgba(197, 138, 42, 0.14), rgba(179, 58, 58, 0.07) 58%, transparent);
+    radial-gradient(120% 90% at 0% 0%, rgba(197, 138, 42, 0.16), rgba(179, 58, 58, 0.06) 40%, transparent 70%);
 }
 
 body[data-step="thankYou"] .review-panel::before {
   background:
-    linear-gradient(135deg, rgba(31, 122, 77, 0.14), rgba(18, 61, 58, 0.06) 58%, transparent);
+    radial-gradient(120% 90% at 0% 0%, rgba(31, 122, 77, 0.16), rgba(18, 61, 58, 0.05) 40%, transparent 70%);
 }
 
 .brand-row {
@@ -378,9 +378,43 @@ input.is-invalid {
 
 .chip-grid input,
 .inline-check input {
-  width: 14px;
-  height: 14px;
-  accent-color: var(--primary);
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 2px solid var(--line-strong);
+  border-radius: 7px;
+  background: #ffffff;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.chip-grid input::after,
+.inline-check input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 7px;
+  width: 5px;
+  height: 10px;
+  border: solid #ffffff;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chip-grid input:checked,
+.inline-check input:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.chip-grid input:checked::after,
+.inline-check input:checked::after {
+  transform: rotate(45deg) scale(1);
 }
 
 .form-grid {
@@ -2657,6 +2691,38 @@ body[data-step="rating"] .rating-grid {
 }
 
 .chip-grid-row input {
-  width: auto;
-  accent-color: var(--primary);
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 2px solid var(--line-strong);
+  border-radius: 7px;
+  background: #ffffff;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.chip-grid-row input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 7px;
+  width: 5px;
+  height: 10px;
+  border: solid #ffffff;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg) scale(0);
+  transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chip-grid-row input:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.chip-grid-row input:checked::after {
+  transform: rotate(45deg) scale(1);
 }
