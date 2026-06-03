@@ -16,8 +16,8 @@ const config = {
     "You write realistic customer review suggestions for Google Reviews. Output only one review, with no title, no bullets, no quotes, and no explanation. Sound like a genuine customer, not a marketer. Use simple natural language, specific but believable praise, and avoid overpromising. Avoid repeating the same phrase or idea in the same review. Do not mention AI, generated text, ratings, prompts, business strategy, or internal instructions. Do not use emojis, hashtags, excessive adjectives, or phrases like highly recommended more than once.",
   maxReviewHistory: 12,
   maxGenerationAttempts: 5,
-  duplicateSimilarityLimit: 0.58,
-  aiTone: "Professional",
+  duplicateSimilarityLimit: 0.72,
+  aiTone: "Enthusiastic",
   aiLength: "medium",
   reviewTopics: [
     "Clean design",
@@ -292,23 +292,26 @@ function scheduleGenerateReview(delay = 220) {
 async function generateReview() {
   const requestId = state.generationRequestId + 1;
   state.generationRequestId = requestId;
-  const mode = reviewMode.value;
+  // Always read mode/tone from config (set from dashboard) not from hidden input value
+  const mode = config.aiLength || reviewMode.value || "medium";
+  const toneEl = document.querySelector("#reviewTone");
+  if (toneEl) toneEl.value = config.aiTone || "Enthusiastic";
   const topics = getSelectedTopics();
-  reviewText.value = "AI is preparing a review suggestion...";
+  reviewText.value = "Generating your review suggestion…";
 
   try {
     const generated = await generateUniqueReview(mode, topics);
-    if (requestId !== state.generationRequestId) {
-      return;
-    }
+    if (requestId !== state.generationRequestId) return;
     reviewText.value = generated;
   } catch (error) {
     const fallback = buildUniqueFallbackReview(mode, topics);
-    rememberGeneratedReview(fallback);
-    if (requestId !== state.generationRequestId) {
-      return;
+    if (requestId !== state.generationRequestId) return;
+    if (fallback) {
+      rememberGeneratedReview(fallback);
+      reviewText.value = fallback;
+    } else {
+      reviewText.value = getOpeningSafeFallback(mode);
     }
-    reviewText.value = fallback;
   }
 }
 
@@ -328,23 +331,19 @@ async function generateUniqueReview(mode, topics) {
   for (let attempt = 0; attempt < config.maxGenerationAttempts; attempt += 1) {
     const generated = await generateWithOllama(mode, topics, attempt);
     const candidate = sanitizeReview(generated);
-
     if (candidate && isReviewLengthValid(candidate, mode) && isReviewQualityAcceptable(candidate)) {
       rememberGeneratedReview(candidate);
       return candidate;
     }
   }
-
-  const fallback = buildUniqueFallbackReview(mode, topics);
-  rememberGeneratedReview(fallback);
-  return fallback;
+  // All Ollama attempts failed or were rejected — fall through to throw so caller handles fallback
+  throw new Error("No acceptable Ollama review generated.");
 }
 
 async function generateWithOllama(mode, topics, attempt = 0) {
   const styleAngle = getReviewStyleAngle(attempt);
   const recentReviews = getReviewHistory().slice(0, 4);
-  const toneElement = document.querySelector("#reviewTone");
-  const tone = toneElement ? toneElement.value : "Professional";
+  const tone = config.aiTone || document.querySelector("#reviewTone")?.value || "Enthusiastic";
   
   const toneInstructions = {
     Professional: "Measured, professional business-to-business (B2B) tone focusing on competence, reliable delivery, and high quality. Example style: 'Highly competent team that delivers on their promises.'",
@@ -434,39 +433,31 @@ function joinPhrases(phrases) {
 }
 
 function buildUniqueFallbackReview(mode, topics) {
-  const toneElement = document.querySelector("#reviewTone");
-  const tone = toneElement ? toneElement.value : "Professional";
+  const tone = config.aiTone || (document.querySelector("#reviewTone")?.value) || "Enthusiastic";
   const compactReview = buildCompactFallbackReview(mode, topics, tone);
-  if (compactReview) {
-    return compactReview;
-  }
-  
+  return compactReview || getOpeningSafeFallback(mode);
 }
 
 function buildCompactFallbackReview(mode, topics, tone) {
   const options = buildFallbackOptions(mode, topics, tone);
   const start = getFallbackStartIndex(options.length, topics, tone, mode);
   const candidates = [];
+
+  // First pass: find a review that passes all quality checks
   for (let index = 0; index < options.length; index += 1) {
     const candidate = trimReviewToMode(options[(start + index) % options.length], mode);
-    if (candidate) {
-      candidates.push(candidate);
-    }
-    if (isReviewQualityAcceptable(candidate)) {
-      return candidate;
-    }
+    if (!candidate) continue;
+    candidates.push(candidate);
+    if (isReviewQualityAcceptable(candidate)) return candidate;
   }
 
-  const nonExactCandidate = candidates.find((candidate) =>
-    !hasExactReviewMatch(candidate)
-      && !hasOpeningSentenceMatch(candidate)
-      && !hasRepeatedSentenceMatch(candidate)
-      && !hasAwkwardReviewWording(candidate)
+  // Second pass: relax — accept anything not exact-matched or awkward (ignore similarity score)
+  const relaxed = candidates.find((c) =>
+    !hasExactReviewMatch(c) && !hasAwkwardReviewWording(c)
   );
-  if (nonExactCandidate) {
-    return nonExactCandidate;
-  }
+  if (relaxed) return relaxed;
 
+  // Last resort: mutate the best candidate slightly to make it distinct
   return buildDistinctFallbackVariant(candidates[0] || "", mode);
 }
 
