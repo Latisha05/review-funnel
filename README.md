@@ -9,27 +9,23 @@ A mobile-first QR review page for routing happy customers toward Google Reviews 
 - Copy review button plus direct Google review redirect.
 - Ratings 1 to 3 show a private feedback form.
 - Firestore event storage through the local Node server.
-- Ollama `llama3.2:3b` support with a fallback review if Ollama is unavailable.
+- OpenRouter review generation using `meta-llama/llama-3.2-1b-instruct`, with a fallback review if the API is unavailable.
 
 Run the local server, then open `http://127.0.0.1:5500`.
 Use `http://127.0.0.1:5500/dashboard.html` to edit clone-friendly business, QR, topic, and review prompt settings.
 
-## Local Ollama
+## OpenRouter Review Generation
 
-Install and run Ollama, then pull the model:
-
-```bash
-ollama pull llama3.2:3b
-ollama run llama3.2:3b
-```
-
-The page calls:
+Add your real OpenRouter key to `.env` only:
 
 ```text
-http://localhost:11434/api/generate
+OPENROUTER_API_KEY="sk-or-v1..."
+OPENROUTER_MODEL="meta-llama/llama-3.2-1b-instruct"
 ```
 
-If the browser blocks the local request or Ollama is not running, the page still generates a built-in fallback review.
+Do not paste the real key into `.env.example`; that file is only a shareable template. For Cloudflare Pages, set `OPENROUTER_API_KEY` as a secret instead of committing it.
+
+If OpenRouter is unavailable or the key is missing, the page still generates a built-in fallback review.
 
 ## Environment File
 
@@ -41,8 +37,8 @@ Important values:
   Leave this blank while testing AI review generation only.
 - `REVIEW_TOPICS`: comma-separated 2-3 word positive review parameters for a specific client.
 - `FEEDBACK_TOPICS`: comma-separated 2-3 word private feedback issue parameters for a specific client.
-- `OLLAMA_BASE_URL`: usually `http://localhost:11434`.
-- `OLLAMA_MODEL`: use `llama3.2:3b`.
+- `OPENROUTER_API_KEY`: paste your real `sk-or-v1...` key in `.env` only.
+- `OPENROUTER_MODEL`: defaults to `meta-llama/llama-3.2-1b-instruct`.
 - `REVIEW_SYSTEM_PROMPT`: controls the AI review style without editing code.
 - `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`: used by `server.js` to write Firestore securely.
   You can also paste the full Firebase service account JSON at the bottom of `.env`; `server.js` will read it automatically.
@@ -85,7 +81,7 @@ Business, branch, and QR IDs
 Google Place ID
 Positive review parameters
 Private feedback parameters
-Ollama URL and model
+OpenRouter model
 Review system prompt
 ```
 

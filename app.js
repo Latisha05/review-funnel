@@ -10,8 +10,7 @@ const config = {
   qrSource: pageParams.get("source") || "",
   campaign: pageParams.get("campaign") || "",
   googlePlaceId: "PASTE_GOOGLE_PLACE_ID",
-  ollamaUrl: "http://localhost:11434/api/generate",
-  ollamaModel: "llama3.2:3b",
+  reviewModel: "meta-llama/llama-3.2-1b-instruct",
   reviewSystemPrompt:
     "You write realistic customer review suggestions for Google Reviews. Output only one review, with no title, no bullets, no quotes, and no explanation. Sound like a genuine customer, not a marketer. Use simple natural language, specific but believable praise, and avoid overpromising. Avoid repeating the same phrase or idea in the same review. Do not mention AI, generated text, ratings, prompts, business strategy, or internal instructions. Do not use emojis, hashtags, excessive adjectives, or phrases like highly recommended more than once.",
   maxReviewHistory: 12,
@@ -329,93 +328,41 @@ function isReviewLengthValid(review, mode) {
 
 async function generateUniqueReview(mode, topics) {
   for (let attempt = 0; attempt < config.maxGenerationAttempts; attempt += 1) {
-    const generated = await generateWithOllama(mode, topics, attempt);
+    const generated = await generateWithOpenRouter(mode, topics, attempt);
     const candidate = sanitizeReview(generated);
     if (candidate && isReviewLengthValid(candidate, mode) && isReviewQualityAcceptable(candidate)) {
       rememberGeneratedReview(candidate);
       return candidate;
     }
   }
-  // All Ollama attempts failed or were rejected — fall through to throw so caller handles fallback
-  throw new Error("No acceptable Ollama review generated.");
+  // All LLM attempts failed or were rejected, so caller handles fallback.
+  throw new Error("No acceptable LLM review generated.");
 }
 
-async function generateWithOllama(mode, topics, attempt = 0) {
-  const styleAngle = getReviewStyleAngle(attempt);
+async function generateWithOpenRouter(mode, topics, attempt = 0) {
   const recentReviews = getReviewHistory().slice(0, 4);
   const tone = config.aiTone || document.querySelector("#reviewTone")?.value || "Enthusiastic";
-  
-  const toneInstructions = {
-    Professional: "Measured, professional business-to-business (B2B) tone focusing on competence, reliable delivery, and high quality. Example style: 'Highly competent team that delivers on their promises.'",
-    Enthusiastic: "High energy, excited, and dynamic focusing on outstanding results and absolute excellence. Example style: 'Absolutely incredible experience working with this team!'",
-    Appreciative: "Focused on deep gratitude, warmth, support, relationship, and patient guidance. Example style: 'So thankful for their patience and guidance throughout the process.'"
-  };
 
-  const lengthInstructions = {
-    short: "exactly 1 punchy sentence, 50 to 105 characters.",
-    medium: "exactly 1 to 2 short sentences, 105 to 185 characters total. Do not exceed 185 characters.",
-    long: "one polished paragraph of 3 to 4 sentences, 220 to 450 characters."
-  };
-
-  const topicInstructions = topics.length 
-    ? `Praise these selected aspects: ${topics.join(", ")}. Treat chip labels as ideas, not exact phrases to force into the review; for example, write "clear process" instead of the awkward phrase "process clarity". Keep natural exact ideas like "attention to detail" when they fit. Combine the selected ideas into ONE compact impact statement instead of listing each aspect separately.`
-    : "CRITICAL: The customer has NOT selected any specific features yet. You MUST NOT mention any specific service outcomes (such as B2B project delivery speed, ROI goals, web design, leads count, transparent reporting, or WhatsApp automation setups). Write a general recommendation focusing purely on overall satisfaction with EESWEB as a B2B partner, professional teamwork, and a very good overall partnership experience.";
-  const recentOpenings = recentReviews
-    .map((review) => review.split(/[.!?]/)[0])
-    .filter(Boolean)
-    .slice(0, 4);
-
-  const prompt = [
-    config.reviewSystemPrompt,
-    "",
-    `Write one ${mode} Google review for ${config.businessName} with a ${tone} tone.`,
-    `Tone rules: ${toneInstructions[tone] || toneInstructions.Professional}`,
-    `Length rules: Output must be ${lengthInstructions[mode] || lengthInstructions.medium}`,
-    `Rating: ${state.rating} out of 5.`,
-    topicInstructions,
-    `Style angle: ${styleAngle}.`,
-    "Keep it natural, human, specific, and B2B digital-agency oriented. Do not write about food, dining, or restaurants.",
-    "The selected topics are context, not permission to make the review long. Mention impact briefly and keep the final text tight.",
-    "Do not invent emotional process claims like 'calm', 'guided', or 'stress-free' unless the selected topic directly asks for that idea.",
-    "Before answering, silently check whether the review sounds like something a real client would actually post. Rewrite it if any sentence feels awkward, circular, redundant, or mechanically generated.",
-    "Do not turn selected topics into passive dashboard-language sentences. For example, never write 'attention to detail was handled really well'; write a human sentence like 'the small details were clearly thought through'.",
-    "Do not use clumsy phrases like 'showed clearly in the final result', 'process clarity showed clearly', or any wording that repeats the same idea in different words.",
-    "Do not use the same opening, ending, sentence shape, or impact phrase as prior suggestions.",
-    "Avoid template phrases like 'loved working with', 'really lifted the outcome', and 'made a real difference' unless they are not present in recent suggestions.",
-    "Do not put quotes around the review.",
-    "Avoid repeating the same phrase in the review.",
-    recentOpenings.length ? `Do not start like these:\n- ${recentOpenings.join("\n- ")}` : "",
-    recentReviews.length ? `Avoid sounding like these recent suggestions:\n- ${recentReviews.join("\n- ")}` : "",
-  ].join("\n");
-
-  const ollamaHost = config.ollamaUrl.replace(/\/api\/generate$/, "");
-  if (!ollamaHost || ollamaHost.includes("NOT_USED") || ollamaHost.includes("localhost") && location.protocol === "https:") {
-    throw new Error("Ollama not available in this environment.");
-  }
-
-  const response = await fetch(config.ollamaUrl, {
+  const response = await fetch("/api/review/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: config.ollamaModel,
-      prompt,
-      stream: false,
-      options: {
-        temperature: 1.08 + attempt * 0.12,
-        top_p: 0.94,
-        top_k: 80,
-        repeat_penalty: 1.08,
-        num_predict: mode === "long" ? 100 : mode === "medium" ? 42 : 26,
-      },
+      mode,
+      tone,
+      topics,
+      rating: state.rating,
+      attempt,
+      qrCodeId: config.qrCodeId,
+      recentReviews,
     }),
   });
 
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error("Ollama request failed");
+    throw new Error(data.error || "Review generation failed");
   }
 
-  const data = await response.json();
-  return String(data.response || "").trim();
+  return String(data.review || "").trim();
 }
 
 function sanitizeReview(review) {

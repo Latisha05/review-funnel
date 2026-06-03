@@ -5,7 +5,7 @@ export const ALLOWED_COLLECTIONS = new Set(["ratings", "feedback", "reviewEvents
 export const EDITABLE_SETTINGS = new Set([
   "APP_BUSINESS_NAME", "APP_BASE_URL", "BUSINESS_ID", "BRANCH_ID", "BRANCH_NAME",
   "QR_CODE_ID", "QR_CODE_LABEL", "GOOGLE_PLACE_ID", "REVIEW_TOPICS", "FEEDBACK_TOPICS",
-  "OLLAMA_BASE_URL", "OLLAMA_MODEL", "REVIEW_SYSTEM_PROMPT", "AI_TONE", "AI_LENGTH",
+  "OPENROUTER_MODEL", "REVIEW_SYSTEM_PROMPT", "AI_TONE", "AI_LENGTH",
 ]);
 
 // In-memory token cache (per isolate lifetime)
@@ -27,8 +27,7 @@ export function getPublicConfig(env, qrCode = null) {
     qrSource: qrCode?.source || qrCode?.staff || qrCode?.campaign || "",
     campaign: qrCode?.campaign || "",
     googlePlaceId: env.GOOGLE_PLACE_ID || "",
-    ollamaUrl: `${env.OLLAMA_BASE_URL || "http://localhost:11434"}/api/generate`,
-    ollamaModel: env.OLLAMA_MODEL || "llama3.2:3b",
+    reviewModel: env.OPENROUTER_MODEL || "meta-llama/llama-3.2-1b-instruct",
     reviewSystemPrompt: env.REVIEW_SYSTEM_PROMPT || "You write realistic customer review suggestions for Google Reviews. Output only one review, with no title, no bullets, no quotes, and no explanation. Sound like a genuine customer, not a marketer.",
     reviewTopics: parseList(env.REVIEW_TOPICS, "Quality,Service,Value,Cleanliness,Staff,Ambience"),
     feedbackTopics: parseList(env.FEEDBACK_TOPICS, "Staff behavior,Food quality,Delay,Cleanliness,Wrong order,Pricing issue"),
