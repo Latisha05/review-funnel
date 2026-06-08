@@ -409,6 +409,56 @@ async function handleReviewGenerate(body) {
   return { review };
 }
 
+// Maps each UI topic label to a plain-English experience description the LLM
+// can weave into a review naturally, plus optional SEO keyword hints.
+// Add new entries here whenever REVIEW_TOPICS changes.
+const TOPIC_EXPERIENCE_MAP = {
+  "New Bike Purchase": {
+    experience: "buying a new bike",
+    keywords: ["TVS bike near me", "Apache near me"],
+  },
+  "New Scooter Purchase": {
+    experience: "buying a new scooter",
+    keywords: ["Jupiter near me", "TVS scooter Pune"],
+  },
+  "Test Ride Experience": {
+    experience: "going for a test ride before buying",
+    keywords: ["TVS showroom Pune", "TVS test ride Pune"],
+  },
+  "Best Price/Deal": {
+    experience: "getting a great price without any haggling",
+    keywords: ["best TVS deals Pune", "TVS offers Pune"],
+  },
+  "Quick Delivery": {
+    experience: "receiving the vehicle faster than expected",
+    keywords: ["Shelar TVS"],
+  },
+  "Smooth Paperwork": {
+    experience: "completing all the paperwork quickly and without hassle",
+    keywords: ["Shelar TVS"],
+  },
+  "Easy EMI Process": {
+    experience: "setting up EMI easily with no confusing steps",
+    keywords: ["Shelar TVS"],
+  },
+  "Helpful Staff": {
+    experience: "being guided by genuinely helpful staff throughout",
+    keywords: ["Shelar TVS"],
+  },
+  "Knowledgeable Executive": {
+    experience: "working with a sales executive who really knew every detail about the bikes",
+    keywords: ["TVS showroom Pune"],
+  },
+  "Genuine Parts": {
+    experience: "getting only genuine OEM parts used during service",
+    keywords: ["genuine TVS parts", "TVS service Pune"],
+  },
+  "Timely Service": {
+    experience: "having the service completed exactly on time",
+    keywords: ["TVS service Pune", "TVS bike service Pune"],
+  },
+};
+
 function buildOpenRouterReviewPrompt({ businessName, mode, tone, topics, rating, recentReviews, systemPrompt }) {
   const toneInstructions = {
     Professional: "Measured, professional B2B tone. Practical, competent, and credible.",
@@ -420,9 +470,32 @@ function buildOpenRouterReviewPrompt({ businessName, mode, tone, topics, rating,
     medium: "1 to 2 complete short sentences, 105 to 185 characters total.",
     long: "One polished paragraph of 3 to 4 complete sentences, 220 to 450 characters.",
   };
-  const topicInstructions = topics.length
-    ? `Selected customer-liked aspects: ${topics.join(", ")}. Treat these as ideas, not exact words to force into the review.`
+
+  // Translate topic labels → human experiences + collect SEO keywords
+  const experiences = [];
+  const rawKeywords = [];
+  for (const topic of topics) {
+    const mapping = TOPIC_EXPERIENCE_MAP[topic];
+    if (mapping) {
+      experiences.push(mapping.experience);
+      rawKeywords.push(...mapping.keywords);
+    } else {
+      // Unknown / custom topic: pass through as-is so nothing is silently lost
+      experiences.push(topic.toLowerCase());
+    }
+  }
+
+  // Deduplicate keywords and cap at 3 so the LLM isn't overwhelmed
+  const seoKeywords = [...new Set(rawKeywords)].slice(0, 3);
+
+  const topicInstructions = experiences.length
+    ? `The customer had a positive experience with the following: ${experiences.join("; ")}. Write naturally about what they felt or experienced — describe the outcome, not a label. Do not use these as literal phrases.`
     : "No specific aspects were selected, so keep the review general and do not invent specific service outcomes.";
+
+  const keywordInstruction = seoKeywords.length
+    ? `If one or two of these phrases fit naturally into the review, you may use them exactly as written: ${seoKeywords.join(", ")}. Never list them or force them in.`
+    : "";
+
   const recentOpenings = recentReviews
     .map((review) => review.split(/[.!?]/)[0])
     .filter(Boolean)
@@ -436,6 +509,7 @@ function buildOpenRouterReviewPrompt({ businessName, mode, tone, topics, rating,
     `Tone: ${tone}. ${toneInstructions[tone] || toneInstructions.Professional}`,
     `Length: ${lengthInstructions[mode] || lengthInstructions.medium}`,
     topicInstructions,
+    keywordInstruction,
     "The review must sound like a real customer voluntarily describing a genuine experience.",
     "Avoid AI-like templates, repeated openings, generic marketing copy, exaggerated claims, and policy-risky wording.",
     "Do not mention AI, prompts, generated text, incentives, ratings, or internal instructions.",
