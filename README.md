@@ -9,23 +9,23 @@ A mobile-first QR review page for routing happy customers toward Google Reviews 
 - Copy review button plus direct Google review redirect.
 - Ratings 1 to 3 show a private feedback form.
 - Firestore event storage through the local Node server.
-- OpenRouter review generation using `meta-llama/llama-3.2-1b-instruct`, with a fallback review if the API is unavailable.
+- Gemini review generation using `gemini-3.5-flash-lite`, with a fallback review if the API is unavailable.
 
 Run the local server, then open `http://127.0.0.1:5500`.
-Use `http://127.0.0.1:5500/dashboard.html` to edit clone-friendly business, QR, topic, and review prompt settings.
+Use `http://127.0.0.1:5500/login` to sign in and `http://127.0.0.1:5500/dashboard` for the role-aware dashboard.
 
-## OpenRouter Review Generation
+## Gemini Review Generation
 
-Add your real OpenRouter key to `.env` only:
+Add your real Gemini key to `.env` only:
 
 ```text
-OPENROUTER_API_KEY="sk-or-v1..."
-OPENROUTER_MODEL="meta-llama/llama-3.2-1b-instruct"
+GEMINI_API_KEY="..."
+GEMINI_MODEL="gemini-3.5-flash-lite"
 ```
 
-Do not paste the real key into `.env.example`; that file is only a shareable template. For Cloudflare Pages, set `OPENROUTER_API_KEY` as a secret instead of committing it.
+Do not paste the real key into `.env.example`; that file is only a shareable template. For Cloudflare Pages, set `GEMINI_API_KEY` as a secret instead of committing it.
 
-If OpenRouter is unavailable or the key is missing, the page still generates a built-in fallback review.
+If Gemini is unavailable or the key is missing, the page still generates a built-in fallback review.
 
 ## Environment File
 
@@ -37,8 +37,8 @@ Important values:
   Leave this blank while testing AI review generation only.
 - `REVIEW_TOPICS`: comma-separated 2-3 word positive review parameters for a specific client.
 - `FEEDBACK_TOPICS`: comma-separated 2-3 word private feedback issue parameters for a specific client.
-- `OPENROUTER_API_KEY`: paste your real `sk-or-v1...` key in `.env` only.
-- `OPENROUTER_MODEL`: defaults to `meta-llama/llama-3.2-1b-instruct`.
+- `GEMINI_API_KEY`: paste your real Gemini key in `.env` only.
+- `GEMINI_MODEL`: defaults to `gemini-3.5-flash-lite`.
 - `REVIEW_SYSTEM_PROMPT`: controls the AI review style without editing code.
 - `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`: used by `server.js` to write Firestore securely.
   You can also paste the full Firebase service account JSON at the bottom of `.env`; `server.js` will read it automatically.
@@ -59,7 +59,8 @@ http://127.0.0.1:5500
 Local dashboard:
 
 ```text
-http://127.0.0.1:5500/dashboard.html
+http://127.0.0.1:5500/login
+http://127.0.0.1:5500/dashboard
 ```
 
 Dynamic QR target:
@@ -73,7 +74,11 @@ Later, you can change the redirect behavior in the app without changing the prin
 
 ## Dashboard
 
-The dashboard edits safe `.env` settings only:
+The dashboard is served from one root route. Client users see `dashboard.html`; admins see `admin.html`.
+
+Client users are scoped to their `client`/`businessId` from `clientUsers` or local `auth_store.json`. Admin users can pass `?client={businessId}` through the admin UI to view or edit a tenant.
+
+The dashboard edits tenant settings in `businesses/{businessId}`:
 
 ```text
 Business name
@@ -81,11 +86,11 @@ Business, branch, and QR IDs
 Google Place ID
 Positive review parameters
 Private feedback parameters
-OpenRouter model
+Gemini model
 Review system prompt
 ```
 
-Firebase service account values are not exposed in the dashboard. Keep the dashboard local until auth is added.
+Firebase service account values are not exposed in the dashboard.
 
 ## Firestore Setup
 
@@ -99,7 +104,8 @@ Firebase service account values are not exposed in the dashboard. Keep the dashb
    - Copy `client_email` to `FIREBASE_CLIENT_EMAIL`.
    - Copy `private_key` to `FIREBASE_PRIVATE_KEY`.
    - Or paste the full downloaded JSON object at the bottom of `.env`.
-6. Seed the base business, branch, and QR documents:
+6. Create dashboard users in `clientUsers/{base64url(email)}` with `email`, `role`, and `client`/`businessId`.
+7. Seed the base business, branch, and QR documents:
 
 ```bash
 node server.js --bootstrap
@@ -113,6 +119,7 @@ Use these collections:
 businesses/{businessId}
 branches/{branchId}
 qrCodes/{qrCodeId}
+clientUsers/{base64url(email)}
 ratings/{ratingId}
 feedback/{feedbackId}
 reviewEvents/{eventId}
@@ -126,6 +133,8 @@ Suggested document fields:
   "businessId": "abc",
   "branchId": "ravet",
   "qrCodeId": "eesweb-main-campaign",
+  "redirectUrl": "/?business=eesweb&branch=main&qr=eesweb-main-campaign",
+  "qrImageUrl": "/qr-codes/main.png",
   "source": "support-desk",
   "rating": 5,
   "reviewText": "Only saved when customer clicks Google review or I posted it",

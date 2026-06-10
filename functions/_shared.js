@@ -5,7 +5,7 @@ export const ALLOWED_COLLECTIONS = new Set(["ratings", "feedback", "reviewEvents
 export const EDITABLE_SETTINGS = new Set([
   "APP_BUSINESS_NAME", "APP_BASE_URL", "BUSINESS_ID", "BRANCH_ID", "BRANCH_NAME",
   "QR_CODE_ID", "QR_CODE_LABEL", "GOOGLE_PLACE_ID", "REVIEW_TOPICS", "FEEDBACK_TOPICS",
-  "OPENROUTER_MODEL", "REVIEW_SYSTEM_PROMPT", "AI_TONE", "AI_LENGTH",
+  "GEMINI_MODEL", "REVIEW_SYSTEM_PROMPT", "AI_TONE", "AI_LENGTH",
 ]);
 
 // In-memory token cache (per isolate lifetime)
@@ -16,28 +16,29 @@ export function getEnv(ctx) {
   return ctx.env || {};
 }
 
-export function getPublicConfig(env, qrCode = null) {
+export function getPublicConfig(env, qrCode = null, business = null) {
   return {
-    businessName: env.APP_BUSINESS_NAME || "Your Business",
-    businessId: env.BUSINESS_ID || "demo_business",
+    businessName: business?.name || env.APP_BUSINESS_NAME || "Your Business",
+    businessId: business?.businessId || qrCode?.businessId || env.BUSINESS_ID || "demo_business",
+    logoUrl: business?.logoUrl || env.APP_LOGO_URL || "",
     branchId: qrCode?.branchId || env.BRANCH_ID || "main",
     branchName: qrCode?.branchName || env.BRANCH_NAME || "Main",
     qrCodeId: qrCode?.qrCodeId || env.QR_CODE_ID || "default_qr",
     qrLabel: qrCode?.label || env.QR_CODE_LABEL || "Default QR",
     qrSource: qrCode?.source || qrCode?.staff || qrCode?.campaign || "",
     campaign: qrCode?.campaign || "",
-    googlePlaceId: env.GOOGLE_PLACE_ID || "",
-    reviewModel: env.OPENROUTER_MODEL || "meta-llama/llama-3.2-1b-instruct",
-    reviewSystemPrompt: env.REVIEW_SYSTEM_PROMPT || "You write realistic customer review suggestions for Google Reviews. Output only one review, with no title, no bullets, no quotes, and no explanation. Sound like a genuine customer, not a marketer.",
-    reviewTopics: parseList(env.REVIEW_TOPICS, "Quality,Service,Value,Cleanliness,Staff,Ambience"),
-    feedbackTopics: parseList(env.FEEDBACK_TOPICS, "Staff behavior,Food quality,Delay,Cleanliness,Wrong order,Pricing issue"),
-    aiTone: env.AI_TONE || "Professional",
-    aiLength: env.AI_LENGTH || "medium",
+    googlePlaceId: business?.googlePlaceId || env.GOOGLE_PLACE_ID || "",
+    reviewModel: env.GEMINI_MODEL || "gemini-3.5-flash-lite",
+    reviewSystemPrompt: business?.reviewSystemPrompt || env.REVIEW_SYSTEM_PROMPT || "You write realistic customer review suggestions for Google Reviews. Output only one review, with no title, no bullets, no quotes, and no explanation. Sound like a genuine customer, not a marketer.",
+    reviewTopics: parseList(business?.reviewTopics || env.REVIEW_TOPICS, "Quality,Service,Value,Cleanliness,Staff,Ambience"),
+    feedbackTopics: parseList(business?.feedbackTopics || env.FEEDBACK_TOPICS, "Staff behavior,Food quality,Delay,Cleanliness,Wrong order,Pricing issue"),
+    aiTone: business?.aiTone || env.AI_TONE || "Professional",
+    aiLength: business?.aiLength || env.AI_LENGTH || "medium",
   };
 }
 
-export function getReviewPageUrl(env, qrCodeId, qrCode = null) {
-  const config = getPublicConfig(env, qrCode);
+export function getReviewPageUrl(env, qrCodeId, qrCode = null, business = null) {
+  const config = getPublicConfig(env, qrCode, business);
   const params = new URLSearchParams({
     business: config.businessId,
     branch: config.branchId,
@@ -58,10 +59,10 @@ export function parseList(value, fallback) {
   return String(value || fallback).split(",").map(s => s.trim()).filter(Boolean);
 }
 
-export function json(data, status = 200) {
+export function json(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: { "Content-Type": "application/json; charset=utf-8", ...headers },
   });
 }
 
@@ -156,6 +157,18 @@ export async function firestorePatch(env, docPath, data) {
   const body = await res.json();
   if (!res.ok) throw new Error(body.error?.message || "Firestore patch failed.");
   return body;
+}
+
+export async function firestoreGet(env, docPath) {
+  const projectId = env.FIREBASE_PROJECT_ID;
+  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${docPath}`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${await getAccessToken(env)}` },
+  });
+  if (res.status === 404) return null;
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error?.message || "Firestore get failed.");
+  return fromFirestoreDoc(body);
 }
 
 export async function firestoreList(env, collection) {

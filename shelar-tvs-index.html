@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Review Funnel</title>
-    <link rel="icon" type="image/png" href="logo.png" />
+    <title>Shelar TVS — Rate Your Experience</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
     <meta
       name="description"
-      content="A QR-based review funnel that routes happy customers to Google and unhappy customers to private feedback."
+      content="Share your experience at Shelar TVS, your trusted TVS two-wheeler sales and service dealership in Pune. Rate us and leave a Google review."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,12 +18,13 @@
     <main class="app-shell">
       <section class="review-panel" aria-live="polite">
         <div class="brand-row">
-          <div class="brand-mark"><img id="businessLogo" src="" alt="" style="visibility:hidden" /><script>(function(){var b=new URLSearchParams(location.search).get("business")||"";var l=document.getElementById("businessLogo");if(l){l.src=b==="shelar-tvs"?"shelar-tvs-logo.png":"logo.png";l.alt=b==="shelar-tvs"?"Shelar TVS":"";l.style.visibility="";}if(b==="shelar-tvs")document.body.dataset.brand="shelar-tvs";})()</script></div>
+          <div class="brand-mark"><img src="logo.png" alt="Shelar TVS" /></div>
           <div>
-            <p class="eyebrow" id="businessEyebrow" style="visibility:hidden">Review Funnel</p>
-            <h1 id="businessName" style="visibility:hidden">How was your experience today?</h1>
+            <p class="eyebrow">Shelar TVS · Pune</p>
+            <h1 id="businessName">How was your experience today?</h1>
           </div>
         </div>
+
         <div id="ratingStep" class="step is-active">
           <p class="rating-kicker">Tap a star to rate</p>
           <div class="rating-grid" role="radiogroup" aria-label="Choose a star rating">
@@ -63,7 +64,7 @@
             <input id="staffName" name="staff" autocomplete="off" maxlength="40" placeholder="e.g. Rahul" />
           </div>
 
-          <textarea id="reviewText" rows="6" aria-label="Generated review" placeholder="Select at least one thing you liked above to generate your review."></textarea>
+          <textarea id="reviewText" rows="6" aria-label="Generated review"></textarea>
 
           <div class="action-row">
             <button id="copyReviewButton" class="secondary-button" type="button">Copy review</button>
@@ -157,6 +158,6 @@
       </section>
     </div>
 
-    <script src="app.js?v=2"></script>
+    <script src="app.js"></script>
   </body>
 </html>

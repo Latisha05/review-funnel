@@ -20,7 +20,7 @@ REVIEW_TOPICS = "Highly Responsive,Clear Communication,Patient & Helpful,Deliver
 FEEDBACK_TOPICS = "Ads Performance,Development Delay,Automation Glitch,AI Setup Concern,Support Response,Reporting Update,Communication / Coordination,Other"
 AI_TONE = "Enthusiastic"
 AI_LENGTH = "medium"
-OPENROUTER_MODEL = "meta-llama/llama-3.2-1b-instruct"
+GEMINI_MODEL = "gemini-3.5-flash-lite"
 REVIEW_SYSTEM_PROMPT = "You write realistic customer review suggestions for Google Reviews. Output only one review, with no title, no bullets, no quotes, and no explanation. Sound like a genuine customer, not a marketer. Use simple natural language, specific but believable praise, and avoid overpromising. Avoid repeating the same phrase or idea in the same review. Do not mention AI, generated text, ratings, prompts, business strategy, or internal instructions. Do not use emojis, hashtags, excessive adjectives, or phrases like highly recommended more than once."
 
 # SECRETS — do NOT add here. Set them once via Cloudflare dashboard or:

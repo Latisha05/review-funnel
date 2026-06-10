@@ -1,6 +1,6 @@
 import {
   getMergedEnv, getPublicConfig, getReviewPageUrl,
-  firestoreCreate, firestoreList, firestorePatch,
+  firestoreCreate, firestoreGet, firestoreList,
 } from "../_shared.js";
 
 export async function onRequestGet(ctx) {
@@ -19,7 +19,8 @@ export async function onRequestGet(ctx) {
     } catch { /* non-fatal */ }
   }
 
-  const redirectUrl = getReviewPageUrl(env, qrCodeId, qrCode);
+  const business = qrCode?.businessId ? await firestoreGet(env, `businesses/${qrCode.businessId}`) : null;
+  const redirectUrl = qrCode?.redirectUrl || getReviewPageUrl(env, qrCodeId, qrCode, business);
   return Response.redirect(new URL(redirectUrl, new URL(ctx.request.url).origin).href, 302);
 }
 
@@ -37,7 +38,13 @@ async function trackScan(env, qrCodeId, request) {
     try { visitSource = new URL(referer).hostname; } catch { visitSource = "External Link"; }
   }
 
-  const config = getPublicConfig(env);
+  let qrCode = null;
+  let business = null;
+  try {
+    qrCode = await firestoreGet(env, `qrCodes/${qrCodeId}`);
+    if (qrCode?.businessId) business = await firestoreGet(env, `businesses/${qrCode.businessId}`);
+  } catch { /* non-fatal */ }
+  const config = getPublicConfig(env, qrCode, business);
   const cf = request.cf || {};
 
   const scanEvent = {

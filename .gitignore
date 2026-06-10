@@ -4,3 +4,11 @@ dist/
 .DS_Store
 data_store.json
 .wrangler/
+
+# Secrets and local-only state (never commit)
+auth_store.json
+.claude/
+
+# Local reference backup (contains its own secrets) and scratch files
+ref/
+gemini-debug.json

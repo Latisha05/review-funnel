@@ -1,6 +1,6 @@
 import {
   getMergedEnv, getPublicConfig, ALLOWED_COLLECTIONS,
-  firestoreCreate, firestoreList, json, jsonError,
+  firestoreCreate, firestoreGet, firestoreList, json, jsonError,
 } from "../_shared.js";
 
 export async function onRequestPost(ctx) {
@@ -22,7 +22,14 @@ export async function onRequestPost(ctx) {
       } catch { /* non-fatal */ }
     }
 
-    const config = getPublicConfig(env, qrCode);
+    let business = null;
+    const businessId = qrCode?.businessId || body.payload?.businessId || env.BUSINESS_ID || "";
+    if (businessId && env.FIREBASE_PROJECT_ID) {
+      try {
+        business = await firestoreGet(env, `businesses/${businessId}`);
+      } catch { /* non-fatal */ }
+    }
+    const config = getPublicConfig(env, qrCode, business);
     const payload = {
       ...body.payload,
       type: body.type,
