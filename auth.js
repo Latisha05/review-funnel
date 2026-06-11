@@ -20,7 +20,10 @@
     if (loginForm) {
       loginForm.addEventListener("submit", handleLogin);
       if (forgotPasswordButton) forgotPasswordButton.addEventListener("click", handleForgotPassword);
-      await redirectIfAuthenticated();
+      // Note: we intentionally do NOT auto-redirect already-authenticated visitors to
+      // /dashboard here. Combined with the dashboard's "no session -> /login" guard it
+      // could create a redirect loop on the deployed domain. The login page always opens;
+      // after a successful sign-in the form handler navigates to /dashboard.
     }
 
     if (resetForm) {
