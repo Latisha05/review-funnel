@@ -1,3 +1,5 @@
+/test-redirect /login 301
+/test-rewrite /login.html 200
 /login /login.html 200
 /dashboard /dashboard.html 200
 /admin /admin.html 200
