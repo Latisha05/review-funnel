@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Review Funnel Dashboard</title>
-    <link rel="icon" type="image/png" href="logo.png" />
+    <title>RatifyAI Dashboard</title>
+    <link rel="icon" type="image/png" href="ratify-logo.png" />
     <meta name="description" content="Dashboard for QR scans, ratings, private feedback, QR links, and review settings." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,9 +15,9 @@
     <div class="dashboard-container">
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-          <div class="brand-logo"><img src="logo.png" alt="ReviewFunnel" /></div>
+          <div class="brand-logo"><img src="ratify-logo.png" alt="RatifyAI" /></div>
           <div class="brand-text">
-            <h2>ReviewFunnel</h2>
+            <h2>RatifyAI</h2>
             <span id="sidebarBusinessName">Dashboard</span>
           </div>
         </div>
@@ -47,11 +47,10 @@
         </nav>
 
         <div class="sidebar-footer">
-          <div class="connection-status badge" id="connectionBadge">
-            <span class="status-dot"></span>
-            <span class="status-text">Connecting</span>
-          </div>
-          <a class="view-live-button" href="/" target="_blank" rel="noreferrer">Open review page</a>
+          <button class="sidebar-logout-button" id="logoutButton" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>
+            Log out
+          </button>
         </div>
       </aside>
 
@@ -61,12 +60,23 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
           <div class="navbar-left">
-            <p class="breadcrumb" id="dashboardBreadcrumb">Client Dashboard</p>
-            <h1 id="pageTitle">Overview</h1>
+            <div class="overview-heading" id="overviewHeading">
+              <h1 class="business-gradient-title" id="dashboardBusinessTitle">Shelar TVS</h1>
+              <p class="dashboard-intro">Your <strong>RatifyAI</strong> analytics dashboard for tracking ratings, customer feedback, review activity, and branch performance.</p>
+            </div>
+            <div class="section-heading" id="sectionHeading" hidden>
+              <p class="breadcrumb" id="dashboardBreadcrumb">Shelar TVS Dashboard</p>
+              <h1 id="pageTitle">Overview</h1>
+            </div>
           </div>
           <div class="navbar-actions">
+            <div class="branch-filter" id="branchFilter" hidden>
+              <label for="branchFilterSelect">Branch</label>
+              <select id="branchFilterSelect" aria-label="Filter dashboard by branch">
+                <option value="all">All branches</option>
+              </select>
+            </div>
             <button class="secondary-button compact-button" id="refreshDataButton" type="button">Refresh</button>
-            <button class="secondary-button compact-button" id="logoutButton" type="button">Log out</button>
           </div>
         </header>
 
@@ -134,37 +144,32 @@
             <div class="charts-row tables-layout">
               <div class="chart-container">
                 <div class="chart-header">
-                  <div>
-                    <h3>Latest ratings</h3>
-                    <span class="subtitle">Data sent from the mobile review page</span>
+                  <div class="chart-header-titled">
+                    <span class="section-icon section-icon-amber" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </span>
+                    <div>
+                      <h3>Recent activity</h3>
+                      <span class="subtitle">Latest ratings from the mobile review page</span>
+                    </div>
                   </div>
                 </div>
-                <div class="table-wrapper">
-                  <table class="dashboard-table">
-                    <thead>
-                      <tr>
-                        <th>Rating</th>
-                        <th>QR</th>
-                        <th>Created</th>
-                      </tr>
-                    </thead>
-                    <tbody id="ratingsTable"></tbody>
-                  </table>
-                </div>
+                <div class="activity-feed scroll-area" id="ratingsActivityList"></div>
               </div>
 
-              <div class="chart-container">
+              <div class="chart-container branch-links-panel">
                 <div class="chart-header">
-                  <div>
-                    <h3>Dynamic QR target</h3>
-                    <span class="subtitle">Use this URL in a dynamic QR provider</span>
+                  <div class="chart-header-titled">
+                    <span class="section-icon section-icon-indigo" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </span>
+                    <div>
+                      <h3>Branch review links</h3>
+                      <span class="subtitle">Open the live review journey for any Shelar TVS location</span>
+                    </div>
                   </div>
                 </div>
-                <div class="copy-field">
-                  <input id="dynamicQrUrl" readonly aria-label="Dynamic QR URL" />
-                  <button class="secondary-button" id="copyQrButton" type="button">Copy</button>
-                </div>
-                <a class="view-live-button light-button" id="openQrLink" href="/r/eesweb-test" target="_blank" rel="noreferrer">Open QR link</a>
+                <div class="branch-links-grid" id="branchLinksGrid"></div>
               </div>
             </div>
           </section>
@@ -180,71 +185,29 @@
           </section>
 
           <section class="dashboard-view" id="view-qrcodes">
-            <div class="qr-layout-grid">
-              <div class="chart-container grid-span-2">
-                <div class="chart-header">
-                  <div>
-                    <h3>QR registry</h3>
-                    <span class="subtitle">Create one link per branch, staff member, source, or campaign</span>
-                  </div>
-                </div>
-                <div class="table-wrapper">
-                  <table class="dashboard-table">
-                    <thead>
-                      <tr>
-                        <th>QR</th>
-                        <th>QR Link</th>
-                        <th>Label</th>
-                        <th>Branch</th>
-                        <th>Destination</th>
-                        <th>Source / campaign</th>
-                        <th>Scans</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody id="qrCodesRegistryTable"></tbody>
-                  </table>
+            <div class="chart-container">
+              <div class="chart-header">
+                <div>
+                  <h3>QR registry</h3>
+                  <span class="subtitle">Your branch review links. Tap "Copy URL" to share or print a QR for any branch.</span>
                 </div>
               </div>
-
-              <div class="chart-container">
-                <div class="chart-header">
-                  <div>
-                    <h3>Create QR tracker</h3>
-                    <span class="subtitle">Create the URL here, then generate the QR image on any free tool</span>
-                  </div>
-                </div>
-                <div class="qr-tip-box">
-                  <p class="qr-tip-text">Copy the link below and paste it into <strong>qr.io</strong>, <strong>goqr.me</strong>, or <strong>Canva</strong> to generate a printable QR image. Use a dynamic QR provider so you can update the destination later without reprinting.</p>
-                </div>
-                <form id="createQrForm" class="sidebar-form">
-                  <div class="field-group">
-                    <label for="regQrId">QR code ID</label>
-                    <input id="regQrId" placeholder="eesweb-main" required />
-                  </div>
-                  <div class="field-group">
-                    <label for="regQrLabel">Label</label>
-                    <input id="regQrLabel" placeholder="e.g. Main entrance QR" required />
-                  </div>
-                  <div class="field-group">
-                    <label for="regBranchName">Branch</label>
-                    <input id="regBranchName" placeholder="Main" />
-                  </div>
-                  <div class="field-group">
-                    <label for="regRedirectUrl">Redirect / review page URL <span class="field-optional">(optional)</span></label>
-                    <input id="regRedirectUrl" placeholder="/?business=eesweb&branch=main&qr=eesweb-main" />
-                  </div>
-                  <div class="field-group">
-                    <label for="regQrImageUrl">QR PNG URL/path <span class="field-optional">(optional)</span></label>
-                    <input id="regQrImageUrl" placeholder="/qr-codes/main.png" />
-                  </div>
-                  <div class="field-group">
-                    <label for="regStaff">Staff / source <span class="field-optional">(optional)</span></label>
-                    <input id="regStaff" placeholder="e.g. Rahul, Table 5, Website footer" />
-                  </div>
-                  <button class="primary-button" type="submit">Create tracker</button>
-                  <p id="qrCreationStatus" class="form-status"></p>
-                </form>
+              <div class="table-wrapper">
+                <table class="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>QR</th>
+                      <th>QR Link</th>
+                      <th>Label</th>
+                      <th>Branch</th>
+                      <th>Destination</th>
+                      <th>Source / campaign</th>
+                      <th>Scans</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="qrCodesRegistryTable"></tbody>
+                </table>
               </div>
             </div>
           </section>
@@ -262,126 +225,98 @@
           </section>
 
           <section class="dashboard-view" id="view-settings">
-            <form id="settingsForm" class="settings-layout-form">
-              <div class="settings-grid-layout">
-                <div class="chart-container">
-                  <div class="chart-header">
+            <div class="settings-managed-note">
+              These settings are managed for you by your EESWEB account manager. To change your
+              business name, branches, review topics, or how reviews are written, just reach out to them.
+            </div>
+            <div class="settings-grid-layout">
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-header-titled">
+                    <span class="section-icon section-icon-indigo" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
+                    </span>
                     <div>
-                      <h3>Business setup</h3>
-                      <span class="subtitle">Clone-friendly identity and Google profile settings</span>
-                    </div>
-                  </div>
-                  <div class="form-body">
-                    <div class="field-group">
-                      <label for="businessNameInput">Business name</label>
-                      <input id="businessNameInput" name="APP_BUSINESS_NAME" />
-                    </div>
-                    <div class="field-group">
-                      <label for="baseUrlInput">Base URL</label>
-                      <input id="baseUrlInput" name="APP_BASE_URL" />
-                    </div>
-                    <div class="dashboard-grid grid-2">
-                      <div class="field-group">
-                        <label for="businessIdInput">Business ID</label>
-                        <input id="businessIdInput" name="BUSINESS_ID" />
-                      </div>
-                      <div class="field-group">
-                        <label for="branchIdInput">Branch ID</label>
-                        <input id="branchIdInput" name="BRANCH_ID" />
-                      </div>
-                    </div>
-                    <div class="dashboard-grid grid-2">
-                      <div class="field-group">
-                        <label for="branchNameInput">Branch name</label>
-                        <input id="branchNameInput" name="BRANCH_NAME" />
-                      </div>
-                      <div class="field-group">
-                        <label for="qrCodeInput">Default QR ID</label>
-                        <input id="qrCodeInput" name="QR_CODE_ID" />
-                      </div>
-                    </div>
-                    <div class="field-group">
-                      <label for="qrLabelInput">Default QR label</label>
-                      <input id="qrLabelInput" name="QR_CODE_LABEL" />
-                    </div>
-                    <div class="field-group">
-                      <label for="placeIdInput">Google Place ID</label>
-                      <input id="placeIdInput" name="GOOGLE_PLACE_ID" placeholder="Optional while testing" />
+                      <h3>Account</h3>
+                      <span class="subtitle">Your business profile on RatifyAI</span>
                     </div>
                   </div>
                 </div>
-
-                <div class="chart-container">
-                  <div class="chart-header">
-                    <div>
-                      <h3>AI review voice</h3>
-                      <span class="subtitle">This controls the generated review style on mobile</span>
-                    </div>
-                  </div>
-                  <div class="form-body">
-                    <div class="dashboard-grid grid-2">
-                      <div class="field-group">
-                        <label for="aiToneSelector">Default tone</label>
-                        <select id="aiToneSelector" name="AI_TONE">
-                          <option value="Professional">Professional</option>
-                          <option value="Appreciative">Appreciative</option>
-                          <option value="Enthusiastic">Enthusiastic</option>
-                        </select>
-                      </div>
-                      <div class="field-group">
-                        <label for="aiLengthSelector">Default length</label>
-                        <select id="aiLengthSelector" name="AI_LENGTH">
-                          <option value="short">Short</option>
-                          <option value="medium">Medium</option>
-                          <option value="long">Long</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div class="field-group">
-                      <label for="systemPromptInput">System prompt</label>
-                      <textarea id="systemPromptInput" name="REVIEW_SYSTEM_PROMPT" rows="7"></textarea>
-                    </div>
-                    <div class="dashboard-grid grid-2">
-                      <div class="field-group">
-                        <label for="geminiModelInput">Gemini model</label>
-                        <input id="geminiModelInput" name="GEMINI_MODEL" readonly aria-readonly="true" data-readonly-setting="true" />
-                      </div>
-                      <div class="field-group">
-                        <label>Gemini API key</label>
-                        <p class="field-help">Set this privately as GEMINI_API_KEY in .env or as a Cloudflare secret.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="chart-container">
-                  <div class="chart-header">
-                    <div>
-                      <h3>Review parameters</h3>
-                      <span class="subtitle">One short phrase per line</span>
-                    </div>
-                  </div>
-                  <div class="form-body">
-                    <div class="field-group">
-                      <label for="reviewTopicsInput">Positive checkboxes</label>
-                      <textarea id="reviewTopicsInput" name="REVIEW_TOPICS" rows="7"></textarea>
-                    </div>
-                    <div class="field-group">
-                      <label for="feedbackTopicsInput">Private feedback checkboxes</label>
-                      <textarea id="feedbackTopicsInput" name="FEEDBACK_TOPICS" rows="7"></textarea>
-                    </div>
-                  </div>
+                <div class="form-body">
+                  <div class="info-row"><span class="info-label">Business name</span><span class="info-value" id="infoBusinessName">-</span></div>
+                  <div class="info-row"><span class="info-label">Branches</span><span class="info-value" id="infoBranchCount">-</span></div>
+                  <div class="info-row"><span class="info-label">Google review link</span><span class="info-value" id="infoGoogleStatus">-</span></div>
                 </div>
               </div>
 
-              <div class="settings-actions-footer">
-                <button class="primary-button save-settings-btn" type="submit">Save settings</button>
-                <span id="dashboardStatus" class="dashboard-status-label" role="status"></span>
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-header-titled">
+                    <span class="section-icon section-icon-cyan" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    </span>
+                    <div>
+                      <h3>Your branches</h3>
+                      <span class="subtitle">Locations customers can leave reviews for</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-body">
+                  <div class="info-chip-list" id="infoBranchList"></div>
+                </div>
               </div>
-            </form>
+
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-header-titled">
+                    <span class="section-icon section-icon-green" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88z"/></svg>
+                    </span>
+                    <div>
+                      <h3>Positive review topics</h3>
+                      <span class="subtitle">What 4-5 star customers can highlight</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-body">
+                  <div class="info-chip-list" id="infoReviewTopics"></div>
+                </div>
+              </div>
+
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div class="chart-header-titled">
+                    <span class="section-icon section-icon-red" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    </span>
+                    <div>
+                      <h3>What customers can flag</h3>
+                      <span class="subtitle">Issues 1-3 star customers can raise privately</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-body">
+                  <div class="info-chip-list" id="infoFeedbackTopics"></div>
+                </div>
+              </div>
+            </div>
           </section>
         </div>
       </main>
+    </div>
+
+    <div class="logout-confirm-modal" id="logoutConfirmModal" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" hidden>
+      <div class="logout-confirm-card">
+        <div class="logout-confirm-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>
+        </div>
+        <h2 id="logoutConfirmTitle">Log out of RatifyAI?</h2>
+        <p>You will need to sign in again to view the Shelar TVS analytics dashboard.</p>
+        <div class="logout-confirm-actions">
+          <button class="secondary-button" id="cancelLogoutButton" type="button">Stay signed in</button>
+          <button class="primary-button logout-confirm-button" id="confirmLogoutButton" type="button">Log out</button>
+        </div>
+      </div>
     </div>
 
     <script src="dashboard.js"></script>

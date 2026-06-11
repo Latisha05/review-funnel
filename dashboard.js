@@ -7,6 +7,8 @@ const dbState = {
   postedReviews: [],
   scans: [],
   qrCodes: [],
+  businesses: [],
+  branches: [],
 };
 
 const elements = {
@@ -26,10 +28,8 @@ const elements = {
   conversionPercentage: document.querySelector("#conversionPercentage"),
   negativeFeedback: document.querySelector("#negativeFeedback"),
   negativePercentage: document.querySelector("#negativePercentage"),
-  ratingsTable: document.querySelector("#ratingsTable"),
-  dynamicQrUrl: document.querySelector("#dynamicQrUrl"),
-  copyQrButton: document.querySelector("#copyQrButton"),
-  openQrLink: document.querySelector("#openQrLink"),
+  ratingsActivityList: document.querySelector("#ratingsActivityList"),
+  branchLinksGrid: document.querySelector("#branchLinksGrid"),
   feedbackSearch: document.querySelector("#feedbackSearch"),
   feedbackCardsList: document.querySelector("#feedbackCardsList"),
   qrCodesRegistryTable: document.querySelector("#qrCodesRegistryTable"),
@@ -40,9 +40,19 @@ const elements = {
   dashboardStatus: document.querySelector("#dashboardStatus"),
   sidebarBusinessName: document.querySelector("#sidebarBusinessName"),
   dashboardBreadcrumb: document.querySelector("#dashboardBreadcrumb"),
+  dashboardBusinessTitle: document.querySelector("#dashboardBusinessTitle"),
+  overviewHeading: document.querySelector("#overviewHeading"),
+  sectionHeading: document.querySelector("#sectionHeading"),
+  branchFilter: document.querySelector("#branchFilter"),
+  branchFilterSelect: document.querySelector("#branchFilterSelect"),
+  logoutConfirmModal: document.querySelector("#logoutConfirmModal"),
+  cancelLogoutButton: document.querySelector("#cancelLogoutButton"),
+  confirmLogoutButton: document.querySelector("#confirmLogoutButton"),
 };
 
 const appContext = resolveAppContext();
+let selectedBranchId = "all";
+let activeDashboardPage = "overview";
 
 let currentUserSession = {
   email: "",
@@ -50,22 +60,7 @@ let currentUserSession = {
   client: "eesweb",
 };
 
-const fields = {
-  APP_BUSINESS_NAME: document.querySelector("#businessNameInput"),
-  APP_BASE_URL: document.querySelector("#baseUrlInput"),
-  BUSINESS_ID: document.querySelector("#businessIdInput"),
-  BRANCH_ID: document.querySelector("#branchIdInput"),
-  BRANCH_NAME: document.querySelector("#branchNameInput"),
-  QR_CODE_ID: document.querySelector("#qrCodeInput"),
-  QR_CODE_LABEL: document.querySelector("#qrLabelInput"),
-  GOOGLE_PLACE_ID: document.querySelector("#placeIdInput"),
-  REVIEW_SYSTEM_PROMPT: document.querySelector("#systemPromptInput"),
-  REVIEW_TOPICS: document.querySelector("#reviewTopicsInput"),
-  FEEDBACK_TOPICS: document.querySelector("#feedbackTopicsInput"),
-  GEMINI_MODEL: document.querySelector("#geminiModelInput"),
-  AI_TONE: document.querySelector("#aiToneSelector"),
-  AI_LENGTH: document.querySelector("#aiLengthSelector"),
-};
+// Client dashboard settings are read-only; values are rendered into an info panel, not a form.
 
 document.addEventListener("DOMContentLoaded", async () => {
   const allowed = await ensureAuthenticated();
@@ -79,9 +74,12 @@ function setupNavigation() {
   elements.menuButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const page = button.dataset.page;
+      activeDashboardPage = page;
       elements.menuButtons.forEach((item) => item.classList.toggle("is-active", item === button));
       elements.views.forEach((view) => view.classList.toggle("is-active", view.id === `view-${page}`));
       elements.pageTitle.textContent = getPageTitle(page);
+      syncDashboardHeader(page);
+      syncBranchFilter();
       elements.sidebar.classList.remove("is-open");
     });
   });
@@ -94,12 +92,34 @@ function setupNavigation() {
 function setupEvents() {
   elements.refreshDataButton.addEventListener("click", loadDashboardData);
   if (elements.logoutButton) {
-    elements.logoutButton.addEventListener("click", logout);
+    elements.logoutButton.addEventListener("click", openLogoutConfirmation);
   }
-  elements.copyQrButton.addEventListener("click", () => copyText(elements.dynamicQrUrl.value));
+  if (elements.cancelLogoutButton) {
+    elements.cancelLogoutButton.addEventListener("click", closeLogoutConfirmation);
+  }
+  if (elements.confirmLogoutButton) {
+    elements.confirmLogoutButton.addEventListener("click", logout);
+  }
+  if (elements.logoutConfirmModal) {
+    elements.logoutConfirmModal.addEventListener("click", (event) => {
+      if (event.target === elements.logoutConfirmModal) closeLogoutConfirmation();
+    });
+  }
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !elements.logoutConfirmModal?.hidden) {
+      closeLogoutConfirmation();
+    }
+  });
   elements.feedbackSearch.addEventListener("input", renderFeedbackInbox);
-  elements.createQrForm.addEventListener("submit", createQrCode);
-  elements.settingsForm.addEventListener("submit", saveSettings);
+  if (elements.branchFilterSelect) {
+    elements.branchFilterSelect.addEventListener("change", () => {
+      selectedBranchId = elements.branchFilterSelect.value || "all";
+      renderOverview();
+      renderRatingsTable();
+      renderFeedbackInbox();
+      renderReviewEvents();
+    });
+  }
 }
 
 function getPageTitle(page) {
@@ -125,15 +145,27 @@ async function loadDashboardData() {
     if (!settingsResponse.ok) throw new Error(settingsData.error || "Settings API failed.");
     if (!dataResponse.ok) throw new Error(dashboardData.error || "Dashboard data API failed.");
 
+    const activeBusinessId = String(
+      settingsData.settings?.BUSINESS_ID || currentUserSession.client || "",
+    ).trim().toLowerCase();
+    const scopeToBusiness = (items) => (items || []).filter((item) => {
+      const itemBusinessId = String(item.businessId || item.context?.businessId || "").trim().toLowerCase();
+      if (activeBusinessId && itemBusinessId !== activeBusinessId) return false;
+      if (activeBusinessId === "shelar-tvs" && hasEeswebIdentity(item)) return false;
+      return true;
+    });
+
     Object.assign(dbState, {
       settings: settingsData.settings || {},
       derived: settingsData.derived || {},
-      ratings: dashboardData.ratings || [],
-      feedback: dashboardData.feedback || [],
-      reviewEvents: dashboardData.reviewEvents || [],
-      postedReviews: dashboardData.postedReviews || [],
-      scans: dashboardData.scans || [],
-      qrCodes: dashboardData.qrCodes || [],
+      ratings: scopeToBusiness(dashboardData.ratings),
+      feedback: scopeToBusiness(dashboardData.feedback),
+      reviewEvents: scopeToBusiness(dashboardData.reviewEvents),
+      postedReviews: scopeToBusiness(dashboardData.postedReviews),
+      scans: scopeToBusiness(dashboardData.scans),
+      qrCodes: scopeToBusiness(dashboardData.qrCodes),
+      businesses: scopeToBusiness(dashboardData.businesses),
+      branches: scopeToBusiness(dashboardData.branches),
     });
 
     const firebaseStatus = dbState.derived.firebaseStatus || "not_configured";
@@ -153,8 +185,10 @@ async function loadDashboardData() {
 }
 
 function syncDataToViews() {
+  syncBranchFilter();
   renderOverview();
   renderRatingsTable();
+  renderBranchLinks();
   renderFeedbackInbox();
   renderQrRegistry();
   renderReviewEvents();
@@ -163,29 +197,36 @@ function syncDataToViews() {
 }
 
 function renderOverview() {
-  const ratings = dbState.ratings.filter((item) => Number(item.rating) >= 1 && Number(item.rating) <= 5);
+  const ratings = filterBySelectedBranch(dbState.ratings)
+    .filter((item) => Number(item.rating) >= 1 && Number(item.rating) <= 5);
   const positives = ratings.filter((item) => Number(item.rating) >= 4);
   const negatives = ratings.filter((item) => Number(item.rating) <= 3);
-  const googleClicks = dbState.reviewEvents.filter((item) => item.type === "google_review_clicked" || item.reviewText);
-  const pendingFeedback = dbState.feedback.filter((item) => item.status !== "resolved");
+  const googleClicks = filterBySelectedBranch(dbState.reviewEvents)
+    .filter((item) => item.type === "google_review_clicked" || item.reviewText);
+  const feedback = filterBySelectedBranch(dbState.feedback);
+  const scans = filterBySelectedBranch(dbState.scans);
+  const pendingFeedback = feedback.filter((item) => item.status !== "resolved");
   const average = ratings.length
     ? ratings.reduce((sum, item) => sum + Number(item.rating || 0), 0) / ratings.length
     : 0;
   const conversion = positives.length ? Math.round((googleClicks.length / positives.length) * 100) : 0;
 
-  elements.totalScans.textContent = dbState.scans.length.toLocaleString();
+  elements.totalScans.textContent = scans.length.toLocaleString();
   elements.avgRating.textContent = average ? average.toFixed(1) : "0.0";
   elements.totalRatingsCount.textContent = `${ratings.length} ratings logged`;
   elements.reviewClicks.textContent = googleClicks.length.toLocaleString();
   elements.conversionPercentage.textContent = `${conversion}% of positive ratings`;
-  elements.negativeFeedback.textContent = dbState.feedback.length.toLocaleString();
+  elements.negativeFeedback.textContent = feedback.length.toLocaleString();
   elements.negativePercentage.textContent = `${negatives.length} low ratings routed privately`;
   elements.feedbackCountBadge.textContent = pendingFeedback.length;
   elements.feedbackCountBadge.hidden = pendingFeedback.length === 0;
   const businessName = dbState.settings.APP_BUSINESS_NAME || "Dashboard";
   elements.sidebarBusinessName.textContent = businessName;
+  if (elements.dashboardBusinessTitle) {
+    elements.dashboardBusinessTitle.textContent = businessName;
+  }
   if (elements.dashboardBreadcrumb) {
-    elements.dashboardBreadcrumb.textContent = `Client Dashboard - ${businessName}`;
+    elements.dashboardBreadcrumb.textContent = `${businessName} Dashboard`;
   }
 
   // Dynamically update page title and brand logo
@@ -196,11 +237,6 @@ function renderOverview() {
     sidebarLogo.alt = `${businessName} logo`;
   }
 
-  const qrUrl = dbState.derived.dynamicQrUrl || dbState.derived.localDynamicQrUrl || "";
-  elements.dynamicQrUrl.value = qrUrl;
-  elements.openQrLink.href = qrUrl || "/";
-
-  prefillQrForm();
   renderRatingDistribution(ratings);
 }
 
@@ -217,32 +253,89 @@ function renderRatingDistribution(ratings) {
 }
 
 function renderRatingsTable() {
-  const latest = [...dbState.ratings]
+  if (!elements.ratingsActivityList) return;
+  const latest = filterBySelectedBranch(dbState.ratings)
     .filter((item) => Number(item.rating) >= 1 && Number(item.rating) <= 5)
     .sort(sortNewestFirst)
-    .slice(0, 8);
+    .slice(0, 12);
+
   if (!latest.length) {
-    elements.ratingsTable.innerHTML = `<tr><td colspan="3" class="table-empty">No ratings yet.</td></tr>`;
+    elements.ratingsActivityList.innerHTML = `<div class="activity-empty">No ratings yet.</div>`;
     return;
   }
 
-  elements.ratingsTable.innerHTML = latest
-    .map((item) => `
-      <tr>
-        <td><strong>${escapeHtml(item.rating || "-")} star</strong></td>
-        <td>
-          <strong>${escapeHtml(item.qrLabel || item.qrCodeId || "-")}</strong>
-          <span class="table-subtle">${escapeHtml([item.branchName, item.source || item.campaign].filter(Boolean).join(" / "))}</span>
-        </td>
-        <td>${formatDate(item.createdAt)}</td>
-      </tr>
-    `)
+  const star = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26 6.9.54-5.25 4.52 1.62 6.74L12 16.9l-6.16 3.72 1.62-6.74L2.2 9.36l6.9-.54z"/></svg>';
+
+  elements.ratingsActivityList.innerHTML = latest
+    .map((item) => {
+      const rating = Number(item.rating) || 0;
+      const tone = rating >= 4 ? "good" : rating === 3 ? "warn" : "bad";
+      const meta = [item.branchName, item.source || item.campaign].filter(Boolean).join(" · ");
+      return `
+        <div class="activity-row">
+          <span class="activity-badge activity-${tone}">${star}<span>${rating}</span></span>
+          <div class="activity-body">
+            <strong>${escapeHtml(item.qrLabel || item.qrCodeId || "Review")}</strong>
+            <span class="activity-meta">${escapeHtml(meta || "General")}</span>
+          </div>
+          <span class="activity-time">${formatDate(item.createdAt)}</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderBranchLinks() {
+  if (!elements.branchLinksGrid) return;
+
+  const branchOrder = ["main", "aranyeshwar", "balaji-nagar", "kothrud", "narhe"];
+  const activeQrCodes = dbState.qrCodes
+    .filter((qr) => qr.status !== "deleted" && qr.qrCodeId)
+    .sort((a, b) => {
+      const aIndex = branchOrder.indexOf(getItemBranchId(a));
+      const bIndex = branchOrder.indexOf(getItemBranchId(b));
+      const safeA = aIndex === -1 ? branchOrder.length : aIndex;
+      const safeB = bIndex === -1 ? branchOrder.length : bIndex;
+      return safeA - safeB || String(a.branchName || "").localeCompare(String(b.branchName || ""));
+    });
+
+  if (!activeQrCodes.length) {
+    elements.branchLinksGrid.innerHTML = `
+      <div class="branch-links-empty">
+        <strong>No branch links available</strong>
+        <span>Active branch review links will appear here.</span>
+      </div>
+    `;
+    return;
+  }
+
+  elements.branchLinksGrid.innerHTML = activeQrCodes
+    .map((qr, index) => {
+      const branchName = qr.branchName || qr.label || qr.qrCodeId;
+      const url = qr.dynamicUrl || getQrUrl(qr.qrCodeId);
+      return `
+        <a class="branch-link-card branch-accent-${index % 5}" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">
+          <span class="branch-link-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          </span>
+          <span class="branch-link-copy">
+            <span class="branch-link-label">Shelar TVS</span>
+            <strong>${escapeHtml(branchName)}</strong>
+            <span class="branch-link-url">${escapeHtml(shortenUrl(url))}</span>
+          </span>
+          <span class="branch-link-action">
+            Open
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+          </span>
+        </a>
+      `;
+    })
     .join("");
 }
 
 function renderFeedbackInbox() {
   const query = elements.feedbackSearch.value.trim().toLowerCase();
-  const feedback = [...dbState.feedback].sort(sortNewestFirst).filter((item) => {
+  const feedback = filterBySelectedBranch(dbState.feedback).sort(sortNewestFirst).filter((item) => {
     const searchable = [
       item.name,
       item.phone,
@@ -324,7 +417,6 @@ function renderQrRegistry() {
           <td><span class="badge badge-info">${Number(qr.scanCount || 0)} scans</span></td>
           <td>
             <button class="qr-download-btn" data-copy="${escapeHtml(url)}" type="button">Copy URL</button>
-            <button class="qr-delete-btn" data-delete="${escapeHtml(qr.qrCodeId)}" type="button">Delete</button>
           </td>
         </tr>
       `;
@@ -334,14 +426,11 @@ function renderQrRegistry() {
   elements.qrCodesRegistryTable.querySelectorAll("[data-copy]").forEach((button) => {
     button.addEventListener("click", () => copyText(button.dataset.copy));
   });
-  elements.qrCodesRegistryTable.querySelectorAll("[data-delete]").forEach((button) => {
-    button.addEventListener("click", () => deleteQrCode(button.dataset.delete));
-  });
 }
 
 function renderReviewEvents() {
-  const events = [...dbState.reviewEvents].sort(sortNewestFirst);
-  const posted = [...dbState.postedReviews].sort(sortNewestFirst);
+  const events = filterBySelectedBranch(dbState.reviewEvents).sort(sortNewestFirst);
+  const posted = filterBySelectedBranch(dbState.postedReviews).sort(sortNewestFirst);
   const merged = [
     ...events.map((item) => ({ ...item, label: "Review action clicked" })),
     ...posted.map((item) => ({ ...item, label: "Marked as posted" })),
@@ -376,89 +465,49 @@ function renderReviewEvents() {
     .join("");
 }
 
+// Render the read-only settings info panel for the client.
 function syncSettingsFormValues() {
-  Object.entries(fields).forEach(([key, field]) => {
-    if (!field) return;
-    field.value = key === "REVIEW_TOPICS" || key === "FEEDBACK_TOPICS"
-      ? csvToLines(dbState.settings[key] || "")
-      : dbState.settings[key] || "";
-  });
-}
+  const s = dbState.settings || {};
+  const setText = (id, value) => {
+    const el = document.querySelector(id);
+    if (el) el.textContent = value;
+  };
 
-function applyClientMode() {
-  const isClient = Boolean(dbState.derived.clientMode);
-  const form = elements.settingsForm;
-  if (!form) return;
+  setText("#infoBusinessName", s.APP_BUSINESS_NAME || "-");
 
-  // Toggle disabled state on all inputs, selects, and textareas
-  form.querySelectorAll("input, select, textarea").forEach((el) => {
-    el.disabled = isClient;
-  });
+  const branches = getAvailableBranches();
+  setText("#infoBranchCount", branches.length ? `${branches.length}` : "-");
 
-  // Show/hide the save button and client notice
-  const saveBtn = form.querySelector(".save-settings-btn");
-  let notice = form.querySelector(".client-mode-notice");
+  const place = String(s.GOOGLE_PLACE_ID || "").trim();
+  setText("#infoGoogleStatus", place ? "Connected" : "Not connected yet");
 
-  if (isClient) {
-    if (saveBtn) saveBtn.style.display = "none";
-    if (!notice) {
-      notice = document.createElement("p");
-      notice.className = "client-mode-notice";
-      notice.textContent = "\u{1F512} Settings are managed by your account administrator and cannot be edited here.";
-      const footer = form.querySelector(".settings-actions-footer");
-      if (footer) footer.prepend(notice);
-    }
-  } else {
-    if (saveBtn) saveBtn.style.display = "";
-    if (notice) notice.remove();
+  const branchList = document.querySelector("#infoBranchList");
+  if (branchList) {
+    branchList.innerHTML = branches.length
+      ? branches.map((b) => `<span class="info-chip">${escapeHtml(b.name)}</span>`).join("")
+      : `<span class="subtitle">No branches yet.</span>`;
+  }
+
+  const topics = String(s.REVIEW_TOPICS || "").split(",").map((t) => t.trim()).filter(Boolean);
+  const topicList = document.querySelector("#infoReviewTopics");
+  if (topicList) {
+    topicList.innerHTML = topics.length
+      ? topics.map((t) => `<span class="info-chip info-chip-positive">${escapeHtml(t)}</span>`).join("")
+      : `<span class="subtitle">No topics configured.</span>`;
+  }
+
+  const feedbackTopics = String(s.FEEDBACK_TOPICS || "").split(",").map((t) => t.trim()).filter(Boolean);
+  const feedbackList = document.querySelector("#infoFeedbackTopics");
+  if (feedbackList) {
+    feedbackList.innerHTML = feedbackTopics.length
+      ? feedbackTopics.map((t) => `<span class="info-chip info-chip-negative">${escapeHtml(t)}</span>`).join("")
+      : `<span class="subtitle">No feedback categories configured.</span>`;
   }
 }
 
-async function saveSettings(event) {
-  event.preventDefault();
-  setFormStatus("Saving settings...");
+// Client dashboard is always read-only; nothing to toggle.
+function applyClientMode() {}
 
-  const settings = Object.fromEntries(
-    Object.entries(fields).map(([key, field]) => [
-      key,
-      key === "REVIEW_TOPICS" || key === "FEEDBACK_TOPICS" ? linesToCsv(field.value) : field.value.trim(),
-    ]),
-  );
-
-  try {
-    const response = await fetch(appUrl("/api/dashboard/settings"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "same-origin",
-      body: JSON.stringify({ settings }),
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Could not save settings.");
-
-    dbState.settings = data.settings || settings;
-    dbState.derived = data.derived || dbState.derived;
-    syncDataToViews();
-    setFormStatus("Settings saved.");
-  } catch (error) {
-    setFormStatus(error.message, true);
-  }
-}
-
-function prefillQrForm() {
-  const idField = document.querySelector("#regQrId");
-  const labelField = document.querySelector("#regQrLabel");
-  const branchField = document.querySelector("#regBranchName");
-  // Only prefill if the user hasn't typed anything yet
-  if (idField && !idField.value) {
-    idField.value = dbState.settings.QR_CODE_ID || "";
-  }
-  if (labelField && !labelField.value) {
-    labelField.value = dbState.settings.QR_CODE_LABEL || "";
-  }
-  if (branchField && !branchField.value) {
-    branchField.value = dbState.settings.BRANCH_NAME || "";
-  }
-}
 
 async function createQrCode(event) {
   event.preventDefault();
@@ -541,8 +590,81 @@ async function copyText(value) {
 }
 
 function setConnectionStatus(type, text) {
+  if (!elements.connectionBadge) return;
   elements.connectionBadge.className = `connection-status badge is-${type}`;
   elements.connectionBadge.querySelector(".status-text").textContent = text;
+}
+
+function syncDashboardHeader(page) {
+  const isOverview = page === "overview";
+  if (elements.overviewHeading) elements.overviewHeading.hidden = !isOverview;
+  if (elements.sectionHeading) elements.sectionHeading.hidden = isOverview;
+}
+
+function syncBranchFilter() {
+  if (!elements.branchFilter || !elements.branchFilterSelect) return;
+
+  const isShelarTvs = getActiveBusinessId() === "shelar-tvs";
+  const supportsBranchFilter = ["overview", "feedback", "reviews"].includes(activeDashboardPage);
+  elements.branchFilter.hidden = !isShelarTvs || !supportsBranchFilter;
+  if (!isShelarTvs) {
+    selectedBranchId = "all";
+    return;
+  }
+
+  const branches = getAvailableBranches();
+  const availableIds = new Set(branches.map((branch) => branch.id));
+  if (selectedBranchId !== "all" && !availableIds.has(selectedBranchId)) {
+    selectedBranchId = "all";
+  }
+
+  elements.branchFilterSelect.innerHTML = [
+    '<option value="all">All branches</option>',
+    ...branches.map((branch) => `<option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name)}</option>`),
+  ].join("");
+  elements.branchFilterSelect.value = selectedBranchId;
+}
+
+function getAvailableBranches() {
+  const branchMap = new Map();
+  const addBranch = (item) => {
+    const id = getItemBranchId(item);
+    const name = String(item.name || item.branchName || item.context?.branchName || "").trim();
+    if (!id || !name || item.status === "deleted") return;
+    if (!branchMap.has(id)) branchMap.set(id, { id, name });
+  };
+
+  // Only the authoritative sources (active branches + active QR codes) feed the dropdown,
+  // so stale branch names left in historical event data never reappear.
+  dbState.branches.forEach(addBranch);
+  dbState.qrCodes.forEach(addBranch);
+
+  return [...branchMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function filterBySelectedBranch(items) {
+  const list = [...(items || [])];
+  if (selectedBranchId === "all") return list;
+  return list.filter((item) => getItemBranchId(item) === selectedBranchId);
+}
+
+function getItemBranchId(item) {
+  const branchId = item.branchId || item.context?.branchId;
+  if (branchId) return slugify(branchId);
+  return slugify(item.branchName || item.context?.branchName || "");
+}
+
+function getActiveBusinessId() {
+  return String(dbState.settings.BUSINESS_ID || currentUserSession.client || "").trim().toLowerCase();
+}
+
+function hasEeswebIdentity(item) {
+  return [
+    item.qrCodeId,
+    item.qrLabel,
+    item.context?.qrCodeId,
+    item.context?.qrLabel,
+  ].some((value) => /\beesweb\b/i.test(String(value || "")));
 }
 
 function setFormStatus(message, isError = false) {
@@ -625,6 +747,10 @@ async function ensureAuthenticated() {
 }
 
 async function logout() {
+  if (elements.confirmLogoutButton) {
+    elements.confirmLogoutButton.disabled = true;
+    elements.confirmLogoutButton.textContent = "Logging out...";
+  }
   try {
     await fetch(`${appContext.authApiBase}/logout`, {
       method: "POST",
@@ -633,6 +759,24 @@ async function logout() {
   } finally {
     window.location.replace(appContext.loginUrl);
   }
+}
+
+function openLogoutConfirmation() {
+  if (!elements.logoutConfirmModal) return;
+  elements.logoutConfirmModal.hidden = false;
+  document.body.classList.add("has-modal-open");
+  elements.cancelLogoutButton?.focus();
+}
+
+function closeLogoutConfirmation() {
+  if (!elements.logoutConfirmModal) return;
+  elements.logoutConfirmModal.hidden = true;
+  document.body.classList.remove("has-modal-open");
+  if (elements.confirmLogoutButton) {
+    elements.confirmLogoutButton.disabled = false;
+    elements.confirmLogoutButton.textContent = "Log out";
+  }
+  elements.logoutButton?.focus();
 }
 
 function csvToLines(value) {
