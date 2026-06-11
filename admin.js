@@ -35,10 +35,8 @@ const elements = {
   conversionPercentage: document.querySelector("#conversionPercentage"),
   negativeFeedback: document.querySelector("#negativeFeedback"),
   negativePercentage: document.querySelector("#negativePercentage"),
-  ratingsTable: document.querySelector("#ratingsTable"),
-  dynamicQrUrl: document.querySelector("#dynamicQrUrl"),
-  copyQrButton: document.querySelector("#copyQrButton"),
-  openQrLink: document.querySelector("#openQrLink"),
+  ratingsActivityList: document.querySelector("#ratingsActivityList"),
+  branchLinksGrid: document.querySelector("#branchLinksGrid"),
   feedbackSearch: document.querySelector("#feedbackSearch"),
   feedbackCardsList: document.querySelector("#feedbackCardsList"),
   qrCodesRegistryTable: document.querySelector("#qrCodesRegistryTable"),
@@ -63,20 +61,14 @@ const elements = {
 };
 
 const fields = {
-  APP_BUSINESS_NAME: document.querySelector("#businessNameInput"),
-  APP_BASE_URL: document.querySelector("#baseUrlInput"),
-  BUSINESS_ID: document.querySelector("#businessIdInput"),
-  BRANCH_ID: document.querySelector("#branchIdInput"),
-  BRANCH_NAME: document.querySelector("#branchNameInput"),
-  QR_CODE_ID: document.querySelector("#qrCodeInput"),
-  QR_CODE_LABEL: document.querySelector("#qrLabelInput"),
   GOOGLE_PLACE_ID: document.querySelector("#placeIdInput"),
   REVIEW_SYSTEM_PROMPT: document.querySelector("#systemPromptInput"),
   REVIEW_TOPICS: document.querySelector("#reviewTopicsInput"),
   FEEDBACK_TOPICS: document.querySelector("#feedbackTopicsInput"),
-  AI_TONE: document.querySelector("#aiToneSelector"),
-  AI_LENGTH: document.querySelector("#aiLengthSelector"),
 };
+
+// Holds the uploaded QR image (base64 data URL) for the create form.
+let pendingQrImage = "";
 
 document.addEventListener("DOMContentLoaded", () => {
   setupNavigation();
@@ -110,10 +102,19 @@ function setupEvents() {
       loadDashboardData();
     });
   }
-  elements.copyQrButton.addEventListener("click", () => copyText(elements.dynamicQrUrl.value));
   elements.feedbackSearch.addEventListener("input", renderFeedbackInbox);
   elements.createQrForm.addEventListener("submit", createQrCode);
   elements.settingsForm.addEventListener("submit", saveSettings);
+
+  // QR create form: live auto-generate of ID + review link as the branch name is typed.
+  const branchInput = document.querySelector("#regBranchName");
+  if (branchInput) branchInput.addEventListener("input", updateQrAutogenPreview);
+
+  // QR image upload (create form)
+  const fileInput = document.querySelector("#regQrImageFile");
+  if (fileInput) fileInput.addEventListener("change", handleQrImagePick);
+  const clearBtn = document.querySelector("#qrUploadClear");
+  if (clearBtn) clearBtn.addEventListener("click", clearPendingQrImage);
 
   // Prompt Tester
   if (elements.testerGenerateButton) elements.testerGenerateButton.addEventListener("click", runPromptTest);
@@ -181,8 +182,59 @@ function syncDataToViews() {
   renderQrRegistry();
   renderReviewEvents();
   syncSettingsFormValues();
+  renderBranchGoogleLinks();
   syncTester();
   // Admin panel: never apply client mode restrictions — always fully editable
+}
+
+// Per-branch Google review link editor (admin privilege).
+function renderBranchGoogleLinks() {
+  const container = document.querySelector("#branchGoogleLinks");
+  if (!container) return;
+  const activeQrCodes = dbState.qrCodes.filter((qr) => qr.status !== "deleted");
+  if (!activeQrCodes.length) {
+    container.innerHTML = `<span class="subtitle">No branches yet. Add one in QR Links.</span>`;
+    return;
+  }
+  container.innerHTML = activeQrCodes
+    .map((qr) => `
+      <div class="branch-google-row">
+        <span class="bg-branch">${escapeHtml(qr.branchName || qr.qrCodeId)}</span>
+        <div class="branch-google-input-row">
+          <input type="text" value="${escapeHtml(qr.googlePlaceId || "")}" placeholder="g.page review URL or Place ID" data-gqr="${escapeHtml(qr.qrCodeId)}" />
+          <button class="bg-save-btn" type="button" data-gsave="${escapeHtml(qr.qrCodeId)}">Save</button>
+        </div>
+      </div>
+    `)
+    .join("");
+
+  container.querySelectorAll("[data-gsave]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const qrCodeId = button.dataset.gsave;
+      const input = container.querySelector(`[data-gqr="${CSS.escape(qrCodeId)}"]`);
+      const value = input ? input.value.trim() : "";
+      button.textContent = "Saving…";
+      button.disabled = true;
+      try {
+        const response = await fetch(`/api/dashboard/qrcodes/google?client=${dbState.selectedClient}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ qrCodeId, googlePlaceId: value }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not save link.");
+        const qr = dbState.qrCodes.find((q) => q.qrCodeId === qrCodeId);
+        if (qr) qr.googlePlaceId = value;
+        button.textContent = "Saved";
+        button.classList.add("is-saved");
+        setTimeout(() => { button.textContent = "Save"; button.classList.remove("is-saved"); button.disabled = false; }, 1500);
+      } catch (error) {
+        button.textContent = "Save";
+        button.disabled = false;
+        setFormStatus(error.message, true);
+      }
+    });
+  });
 }
 
 function renderOverview() {
@@ -220,23 +272,43 @@ function renderOverview() {
     breadcrumb.textContent = `EESWEB \u203A ${biz}`;
   }
 
-  // Update client dashboard and review page links dynamically
-  const openDashboardButton = document.getElementById("openClientDashboardButton");
-  const openDashboardLink = document.getElementById("openClientDashboardLink");
+  // Update the review-page link in the sidebar for the active client.
   const openReviewPageLink = document.getElementById("openReviewPageLink");
+  if (openReviewPageLink) openReviewPageLink.href = `/?business=${encodeURIComponent(dbState.selectedClient)}`;
 
-  const clientDashboardUrl = "/dashboard";
-  const reviewPageUrl = `/?business=${encodeURIComponent(dbState.selectedClient)}`;
-  if (openDashboardButton) openDashboardButton.href = clientDashboardUrl;
-  if (openDashboardLink) openDashboardLink.href = clientDashboardUrl;
-  if (openReviewPageLink) openReviewPageLink.href = reviewPageUrl;
-
-  const qrUrl = dbState.derived.dynamicQrUrl || dbState.derived.localDynamicQrUrl || "";
-  elements.dynamicQrUrl.value = qrUrl;
-  elements.openQrLink.href = qrUrl || "/";
-
-  prefillQrForm();
+  renderBranchLinks();
+  updateQrAutogenPreview();
   renderRatingDistribution(ratings);
+}
+
+function renderBranchLinks() {
+  if (!elements.branchLinksGrid) return;
+  const activeQrCodes = dbState.qrCodes.filter((qr) => qr.status !== "deleted");
+  if (!activeQrCodes.length) {
+    elements.branchLinksGrid.innerHTML = `<div class="activity-empty">No branches yet. Add one in QR Links.</div>`;
+    return;
+  }
+  elements.branchLinksGrid.innerHTML = activeQrCodes
+    .map((qr, index) => {
+      const url = qr.dynamicUrl || getQrUrl(qr.qrCodeId);
+      return `
+        <a class="branch-link-card branch-accent-${index % 5}" href="${escapeHtml(url)}" target="_blank" rel="noreferrer">
+          <span class="branch-link-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          </span>
+          <span class="branch-link-copy">
+            <span class="branch-link-label">${escapeHtml(dbState.settings.APP_BUSINESS_NAME || "Review")}</span>
+            <strong>${escapeHtml(qr.branchName || qr.label || qr.qrCodeId)}</strong>
+            <span class="branch-link-url">${escapeHtml(shortenUrl(url))}</span>
+          </span>
+          <span class="branch-link-action">
+            Open
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+          </span>
+        </a>
+      `;
+    })
+    .join("");
 }
 
 function renderRatingDistribution(ratings) {
@@ -252,27 +324,34 @@ function renderRatingDistribution(ratings) {
 }
 
 function renderRatingsTable() {
+  if (!elements.ratingsActivityList) return;
   const latest = [...dbState.ratings]
     .filter((item) => filterMatchesBranch(item))
     .filter((item) => Number(item.rating) >= 1 && Number(item.rating) <= 5)
     .sort(sortNewestFirst)
-    .slice(0, 8);
+    .slice(0, 12);
   if (!latest.length) {
-    elements.ratingsTable.innerHTML = `<tr><td colspan="3" class="table-empty">No ratings yet.</td></tr>`;
+    elements.ratingsActivityList.innerHTML = `<div class="activity-empty">No ratings yet.</div>`;
     return;
   }
 
-  elements.ratingsTable.innerHTML = latest
-    .map((item) => `
-      <tr>
-        <td><strong>${escapeHtml(item.rating || "-")} star</strong></td>
-        <td>
-          <strong>${escapeHtml(item.qrLabel || item.qrCodeId || "-")}</strong>
-          <span class="table-subtle">${escapeHtml([item.branchName, item.source || item.campaign].filter(Boolean).join(" / "))}</span>
-        </td>
-        <td>${formatDate(item.createdAt)}</td>
-      </tr>
-    `)
+  const star = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26 6.9.54-5.25 4.52 1.62 6.74L12 16.9l-6.16 3.72 1.62-6.74L2.2 9.36l6.9-.54z"/></svg>';
+  elements.ratingsActivityList.innerHTML = latest
+    .map((item) => {
+      const rating = Number(item.rating) || 0;
+      const tone = rating >= 4 ? "good" : rating === 3 ? "warn" : "bad";
+      const meta = [item.branchName, item.source || item.campaign].filter(Boolean).join(" · ");
+      return `
+        <div class="activity-row">
+          <span class="activity-badge activity-${tone}">${star}<span>${rating}</span></span>
+          <div class="activity-body">
+            <strong>${escapeHtml(item.qrLabel || item.qrCodeId || "Review")}</strong>
+            <span class="activity-meta">${escapeHtml(meta || "General")}</span>
+          </div>
+          <span class="activity-time">${formatDate(item.createdAt)}</span>
+        </div>
+      `;
+    })
     .join("");
 }
 
@@ -359,8 +438,12 @@ function renderQrRegistry() {
           <td>${escapeHtml(qr.source || qr.campaign || qr.staff || "General")}</td>
           <td><span class="badge badge-info">${Number(qr.scanCount || 0)} scans</span></td>
           <td>
-            <button class="qr-download-btn" data-copy="${escapeHtml(url)}" type="button">Copy URL</button>
-            <button class="qr-delete-btn" data-delete="${escapeHtml(qr.qrCodeId)}" type="button">Delete</button>
+            <div class="qr-row-actions">
+              <button class="qr-action-btn" data-copy="${escapeHtml(url)}" type="button">Copy URL</button>
+              <button class="qr-action-btn" data-img="${escapeHtml(qr.qrCodeId)}" type="button">${qrImageUrl ? "Replace image" : "Upload image"}</button>
+              ${qrImageUrl ? `<button class="qr-action-btn is-warn" data-img-del="${escapeHtml(qr.qrCodeId)}" type="button">Remove image</button>` : ""}
+              <button class="qr-action-btn is-danger" data-delete="${escapeHtml(qr.qrCodeId)}" type="button">Delete</button>
+            </div>
           </td>
         </tr>
       `;
@@ -369,6 +452,14 @@ function renderQrRegistry() {
 
   elements.qrCodesRegistryTable.querySelectorAll("[data-copy]").forEach((button) => {
     button.addEventListener("click", () => copyText(button.dataset.copy));
+  });
+  elements.qrCodesRegistryTable.querySelectorAll("[data-img]").forEach((button) => {
+    button.addEventListener("click", () => pickImageForExistingQr(button.dataset.img));
+  });
+  elements.qrCodesRegistryTable.querySelectorAll("[data-img-del]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (window.confirm("Remove the QR image for this branch?")) uploadQrImageFor(button.dataset.imgDel, "");
+    });
   });
   elements.qrCodesRegistryTable.querySelectorAll("[data-delete]").forEach((button) => {
     button.addEventListener("click", () => deleteQrCode(button.dataset.delete));
@@ -452,29 +543,78 @@ async function saveSettings(event) {
   }
 }
 
-function prefillQrForm() {
-  const idField = document.querySelector("#regQrId");
-  const labelField = document.querySelector("#regQrLabel");
+// Live preview of the auto-generated QR ID + review link from the branch name.
+function updateQrAutogenPreview() {
   const branchField = document.querySelector("#regBranchName");
-  if (idField && !idField.value) idField.value = dbState.settings.QR_CODE_ID || "";
-  if (labelField && !labelField.value) labelField.value = dbState.settings.QR_CODE_LABEL || "";
-  if (branchField && !branchField.value) branchField.value = dbState.settings.BRANCH_NAME || "";
+  const idPreview = document.querySelector("#regQrIdPreview");
+  const linkPreview = document.querySelector("#regLinkPreview");
+  if (!branchField || !idPreview || !linkPreview) return;
+  const branchName = branchField.value.trim();
+  if (!branchName) {
+    idPreview.textContent = "—";
+    linkPreview.textContent = "—";
+    return;
+  }
+  const branchId = slugify(branchName);
+  const qrCodeId = `${dbState.selectedClient}-${branchId}`;
+  idPreview.textContent = qrCodeId;
+  linkPreview.textContent = `/?business=${dbState.selectedClient}&branch=${branchId}&qr=${qrCodeId}`;
+}
+
+// Read a picked image file into a base64 data URL preview.
+function handleQrImagePick(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (file.size > 3 * 1024 * 1024) {
+    setQrStatus("Image is too large. Please use one under 3 MB.", true);
+    event.target.value = "";
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingQrImage = String(reader.result || "");
+    const preview = document.querySelector("#qrUploadPreview");
+    const empty = document.querySelector("#qrUploadEmpty");
+    const clearBtn = document.querySelector("#qrUploadClear");
+    if (preview) { preview.src = pendingQrImage; preview.hidden = false; }
+    if (empty) empty.hidden = true;
+    if (clearBtn) clearBtn.hidden = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPendingQrImage() {
+  pendingQrImage = "";
+  const fileInput = document.querySelector("#regQrImageFile");
+  const preview = document.querySelector("#qrUploadPreview");
+  const empty = document.querySelector("#qrUploadEmpty");
+  const clearBtn = document.querySelector("#qrUploadClear");
+  if (fileInput) fileInput.value = "";
+  if (preview) { preview.src = ""; preview.hidden = true; }
+  if (empty) empty.hidden = false;
+  if (clearBtn) clearBtn.hidden = true;
+}
+
+function setQrStatus(message, isError = false) {
+  if (!elements.qrCreationStatus) return;
+  elements.qrCreationStatus.textContent = message;
+  elements.qrCreationStatus.classList.toggle("is-error", isError);
 }
 
 async function createQrCode(event) {
   event.preventDefault();
-  elements.qrCreationStatus.textContent = "Creating tracker...";
-  elements.qrCreationStatus.classList.remove("is-error");
+  const branchName = document.querySelector("#regBranchName").value.trim();
+  if (!branchName) {
+    setQrStatus("Enter a branch name.", true);
+    return;
+  }
+  setQrStatus("Creating branch…");
 
-  const branchName = document.querySelector("#regBranchName").value.trim() || "Main";
   const payload = {
-    qrCodeId: document.querySelector("#regQrId").value.trim(),
-    label: document.querySelector("#regQrLabel").value.trim(),
     branchName,
     branchId: slugify(branchName),
-    redirectUrl: document.querySelector("#regRedirectUrl")?.value.trim() || "",
-    qrImageUrl: document.querySelector("#regQrImageUrl")?.value.trim() || "",
     source: document.querySelector("#regStaff").value.trim(),
+    qrImageUrl: pendingQrImage || "",
   };
 
   try {
@@ -484,15 +624,50 @@ async function createQrCode(event) {
       body: JSON.stringify(payload),
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Could not create QR tracker.");
+    if (!response.ok) throw new Error(data.error || "Could not create branch.");
 
     event.currentTarget.reset();
-    elements.qrCreationStatus.textContent = "Tracker created.";
+    clearPendingQrImage();
+    updateQrAutogenPreview();
+    setQrStatus("Branch created.");
     await loadDashboardData();
   } catch (error) {
-    elements.qrCreationStatus.textContent = error.message;
-    elements.qrCreationStatus.classList.add("is-error");
+    setQrStatus(error.message, true);
   }
+}
+
+// Upload / replace / remove the QR image for an existing tracker.
+async function uploadQrImageFor(qrCodeId, dataUrl) {
+  try {
+    const response = await fetch(`/api/dashboard/qrcodes/image?client=${dbState.selectedClient}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ qrCodeId, qrImageUrl: dataUrl }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not update image.");
+    await loadDashboardData();
+  } catch (error) {
+    setFormStatus(error.message, true);
+  }
+}
+
+function pickImageForExistingQr(qrCodeId) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/png,image/jpeg,image/webp,image/svg+xml";
+  input.onchange = () => {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    if (file.size > 3 * 1024 * 1024) {
+      setFormStatus("Image is too large. Please use one under 3 MB.", true);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => uploadQrImageFor(qrCodeId, String(reader.result || ""));
+    reader.readAsDataURL(file);
+  };
+  input.click();
 }
 
 async function resolveFeedback(id) {
@@ -689,8 +864,10 @@ async function copyText(value) {
 }
 
 function setConnectionStatus(type, text) {
+  if (!elements.connectionBadge) return;
   elements.connectionBadge.className = `connection-status badge is-${type}`;
-  elements.connectionBadge.querySelector(".status-text").textContent = text;
+  const statusText = elements.connectionBadge.querySelector(".status-text");
+  if (statusText) statusText.textContent = text;
 }
 
 function setFormStatus(message, isError = false) {

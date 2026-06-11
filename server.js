@@ -173,6 +173,20 @@ if (process.argv.includes("--bootstrap")) {
           return;
         }
 
+        if (request.method === "POST" && pathname === "/api/dashboard/qrcodes/image") {
+          const session = await requireClientSession(request);
+          const body = await readJson(request);
+          sendJson(response, 200, await updateQrImage(body, request, session));
+          return;
+        }
+
+        if (request.method === "POST" && pathname === "/api/dashboard/qrcodes/google") {
+          const session = await requireClientSession(request);
+          const body = await readJson(request);
+          sendJson(response, 200, await updateQrGoogleUrl(body, request, session));
+          return;
+        }
+
         if (request.method === "DELETE" && pathname.startsWith("/api/dashboard/qrcodes/")) {
           const session = await requireClientSession(request);
           const qrCodeId = decodeURIComponent(pathname.split("/").pop());
@@ -795,7 +809,7 @@ function readJson(request) {
     let rawBody = "";
     request.on("data", (chunk) => {
       rawBody += chunk;
-      if (rawBody.length > 1_000_000) reject(new Error("Request body too large."));
+      if (rawBody.length > 6_000_000) reject(new Error("Request body too large."));
     });
     request.on("end", () => {
       try {
@@ -2006,13 +2020,14 @@ async function resolveFeedback(body, request, session) {
 async function addQrCode(body, request, session) {
   const { clientId } = resolveDashboardScope(request, session);
   const { label, branchName, staff, source, campaign } = body;
-  const qrCodeId = normalizeSlug(body.qrCodeId || label || "");
-  if (!qrCodeId) throw new Error("Missing QR Code ID.");
   const finalBranchName = String(branchName || env.BRANCH_NAME || "Main").trim();
   const branchId = normalizeSlug(body.branchId || finalBranchName || env.BRANCH_ID || "main");
-  const publicConfig = await getTenantPublicConfig(clientId, qrCodeId);
+  const publicConfig = await getTenantPublicConfig(clientId, "");
+  // Auto-generate the QR code ID from the business + branch when not supplied.
+  const qrCodeId = normalizeSlug(body.qrCodeId || `${publicConfig.businessId}-${branchId}` || label || "");
+  if (!qrCodeId) throw new Error("Missing QR Code ID.");
   const redirectUrl = normalizeOptionalUrl(body.redirectUrl);
-  const qrImageUrl = normalizeOptionalUrl(body.qrImageUrl);
+  const qrImageUrl = normalizeQrImage(body.qrImageUrl);
   const fallbackTargetPath = getReviewPageUrlForContext({
     businessId: publicConfig.businessId,
     branchId,
@@ -2021,10 +2036,13 @@ async function addQrCode(body, request, session) {
     campaign: String(campaign || "").trim(),
   });
 
+  // Ensure the branch exists for this business (lets the admin create new branches here).
+  await upsertBranch(publicConfig.businessId, branchId, finalBranchName);
+
   const payload = {
     qrCodeId,
     businessId: publicConfig.businessId,
-    label: String(label || `QR for ${staff || source || campaign || finalBranchName}`).trim(),
+    label: String(label || finalBranchName || qrCodeId).trim(),
     branchId,
     branchName: finalBranchName,
     source: String(source || staff || "").trim(),
@@ -2049,6 +2067,91 @@ async function addQrCode(body, request, session) {
   }
   upsertLocalDocument("qrCodes", "qrCodeId", payload);
   return { ok: true, qrCode: payload };
+}
+
+// Accepts an uploaded base64 data-URL image, an http(s)/path URL, or empty to clear.
+function normalizeQrImage(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^data:image\/(png|jpe?g|webp|svg\+xml);base64,/i.test(text)) {
+    if (text.length > 5_000_000) throw new Error("Image is too large. Please upload an image under ~3 MB.");
+    return text;
+  }
+  return normalizeOptionalUrl(text);
+}
+
+// Create or update a branch document for a business (idempotent).
+async function upsertBranch(businessId, branchId, branchName) {
+  if (!businessId || !branchId) return;
+  const now = new Date().toISOString();
+  const docId = `${businessId}-${branchId}`;
+  const payload = { businessId, branchId, name: branchName || branchId, status: "active", updatedAt: now };
+
+  if (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY) {
+    try {
+      const existing = await getFirestoreDocument(`branches/${docId}`).catch(() => null);
+      await setFirestoreDocument(`branches/${docId}`, { ...payload, createdAt: existing?.createdAt || now });
+    } catch (error) {
+      console.warn("Firestore branch upsert failed:", error.message);
+    }
+  }
+  const db = readLocalDb();
+  const idx = db.branches.findIndex((b) => b.businessId === businessId && b.branchId === branchId);
+  if (idx >= 0) db.branches[idx] = { ...db.branches[idx], ...payload };
+  else db.branches.push({ ...payload, createdAt: now });
+  writeLocalDb(db);
+}
+
+// Set the per-branch Google review URL / Place ID on an existing tracker.
+async function updateQrGoogleUrl(body, request, session) {
+  const { clientId } = resolveDashboardScope(request, session);
+  const qrCodeId = String(body?.qrCodeId || "").trim();
+  if (!qrCodeId) throw new Error("Missing QR Code ID.");
+  const existing = await getCollectionDocumentById("qrCodes", qrCodeId, "qrCodeId");
+  ensureTenantAccess(existing, clientId);
+  const googlePlaceId = String(body?.googlePlaceId || "").replace(/[\r\n]+/g, " ").trim().slice(0, 300);
+  const updates = { googlePlaceId, updatedAt: new Date().toISOString() };
+
+  if (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY) {
+    try {
+      await setFirestoreDocument(`qrCodes/${qrCodeId}`, updates);
+    } catch (error) {
+      console.warn("Firestore QR Google URL update failed:", error.message);
+    }
+  }
+  const db = readLocalDb();
+  const idx = db.qrCodes.findIndex((qr) => qr.qrCodeId === qrCodeId);
+  if (idx >= 0) {
+    db.qrCodes[idx] = { ...db.qrCodes[idx], ...updates };
+    writeLocalDb(db);
+  }
+  return { ok: true, googlePlaceId };
+}
+
+// Set or clear the QR image for an existing tracker (replace / delete).
+async function updateQrImage(body, request, session) {
+  const { clientId } = resolveDashboardScope(request, session);
+  const qrCodeId = String(body?.qrCodeId || "").trim();
+  if (!qrCodeId) throw new Error("Missing QR Code ID.");
+  const existing = await getCollectionDocumentById("qrCodes", qrCodeId, "qrCodeId");
+  ensureTenantAccess(existing, clientId);
+  const qrImageUrl = normalizeQrImage(body?.qrImageUrl);
+  const updates = { qrImageUrl, updatedAt: new Date().toISOString() };
+
+  if (env.FIREBASE_PROJECT_ID && env.FIREBASE_CLIENT_EMAIL && env.FIREBASE_PRIVATE_KEY) {
+    try {
+      await setFirestoreDocument(`qrCodes/${qrCodeId}`, updates);
+    } catch (error) {
+      console.warn("Firestore QR image update failed:", error.message);
+    }
+  }
+  const db = readLocalDb();
+  const idx = db.qrCodes.findIndex((qr) => qr.qrCodeId === qrCodeId);
+  if (idx >= 0) {
+    db.qrCodes[idx] = { ...db.qrCodes[idx], ...updates };
+    writeLocalDb(db);
+  }
+  return { ok: true, qrImageUrl };
 }
 
 function getReviewPageUrlForContext(context) {
