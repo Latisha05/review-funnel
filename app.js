@@ -203,10 +203,11 @@ googleReviewButton.addEventListener("click", async () => {
     showToast(SELECT_TOPIC_HINT);
     return;
   }
+  // Copy first, immediately on the click gesture, so the review is on the clipboard before anything else.
+  await copyReview();
   const googleReviewUrl = getGoogleReviewUrl();
   googleReviewButton.disabled = true;
-  googleReviewButton.textContent = "Copying review...";
-  await copyReview();
+  googleReviewButton.textContent = "Opening Google...";
   saveScanEvent("google_review_clicked", {
     rating: state.rating,
     ratingEventId: state.ratingEventId,
@@ -1216,17 +1217,47 @@ async function copyReview() {
   const text = reviewText.value.trim();
   if (!text) {
     if (!hasSelectedTopics()) showToast(SELECT_TOPIC_HINT);
-    return;
+    return false;
   }
 
-  try {
-    await navigator.clipboard.writeText(text);
+  // Preferred: async Clipboard API (works in secure contexts: https / localhost).
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Review copied.");
+      return true;
+    } catch (error) {
+      // fall through to legacy copy
+    }
+  }
+
+  // Legacy fallback (works over plain http / LAN IP where Clipboard API is unavailable).
+  if (legacyCopy(text)) {
     showToast("Review copied.");
+    return true;
+  }
+
+  showToast("Couldn't copy automatically. Long-press the text to copy it.");
+  return false;
+}
+
+// execCommand copy via a throwaway textarea so it works regardless of the visible field's state.
+function legacyCopy(text) {
+  try {
+    const temp = document.createElement("textarea");
+    temp.value = text;
+    temp.setAttribute("readonly", "");
+    temp.style.position = "fixed";
+    temp.style.top = "-1000px";
+    temp.style.opacity = "0";
+    document.body.appendChild(temp);
+    temp.select();
+    temp.setSelectionRange(0, text.length);
+    const ok = document.execCommand("copy");
+    document.body.removeChild(temp);
+    return ok;
   } catch (error) {
-    reviewText.focus();
-    reviewText.select();
-    document.execCommand("copy");
-    showToast("Review selected. Copy it if needed.");
+    return false;
   }
 }
 

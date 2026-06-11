@@ -205,7 +205,7 @@ function getPublicConfig(qrCodeId = "", businessId = "") {
     qrLabel: qrCode?.label || env.QR_CODE_LABEL || "Default QR",
     qrSource: qrCode?.source || qrCode?.staff || qrCode?.campaign || "",
     campaign: qrCode?.campaign || "",
-    googlePlaceId: business?.googlePlaceId || env.GOOGLE_PLACE_ID || "",
+    googlePlaceId: qrCode?.googlePlaceId || business?.googlePlaceId || env.GOOGLE_PLACE_ID || "",
     reviewModel: env.GEMINI_MODEL || "gemini-3.5-flash-lite",
     reviewSystemPrompt:
       business?.reviewSystemPrompt ||
@@ -1003,7 +1003,7 @@ async function getTenantPublicConfig(clientId = "", qrCodeId = "", qrCode = null
     businessName: business?.name || fallback.businessName,
     businessId: resolvedClientId,
     logoUrl: business?.logoUrl || fallback.logoUrl || "",
-    googlePlaceId: business?.googlePlaceId || fallback.googlePlaceId,
+    googlePlaceId: resolvedQr?.googlePlaceId || business?.googlePlaceId || fallback.googlePlaceId,
     reviewSystemPrompt: business?.reviewSystemPrompt || fallback.reviewSystemPrompt,
     reviewTopics: parseList(business?.reviewTopics, "").length
       ? parseList(business.reviewTopics, "")
