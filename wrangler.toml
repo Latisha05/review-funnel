@@ -1,0 +1,30 @@
+name = "ratify"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "."
+
+[[kv_namespaces]]
+binding = "RF_SETTINGS"
+id = "e8c0d6b708f046cbaf251010851902cd"
+
+[vars]
+APP_NAME = "Review Funnel"
+APP_BUSINESS_NAME = "Ratify"
+APP_BASE_URL = "https://ratify.pages.dev"
+BUSINESS_ID = "eesweb"
+BRANCH_ID = "main"
+BRANCH_NAME = "Main"
+QR_CODE_ID = "eesweb-test"
+QR_CODE_LABEL = "EESWEB Test QR"
+# Set GOOGLE_PLACE_ID in the dashboard per business once known.
+GOOGLE_PLACE_ID = ""
+REVIEW_TOPICS = "Quality,Service,Value,Cleanliness,Staff,Ambience"
+FEEDBACK_TOPICS = "Staff behavior,Service quality,Delay,Cleanliness,Wrong order,Pricing issue"
+AI_TONE = "Enthusiastic"
+AI_LENGTH = "medium"
+GEMINI_MODEL = "gemini-3.5-flash"
+REVIEW_SYSTEM_PROMPT = "You write authentic Google reviews from real customers. Output only the review text: no title, rating, quotes, emojis, hashtags, bullets, or explanation. Write as if you are the customer, casually sharing your own experience right after the visit. Keep it between 2 and 5 sentences and never more than 90 words. Sound conversational and specific, not like an advertisement. Include a small concrete detail a real person would remember and a genuine reason they were happy. Avoid generic praise, marketing language, and repeated phrases. Every review must feel unique and genuinely human. Output only the review text."
+
+# SECRETS — do NOT add here. Set them once via Cloudflare dashboard or:
+#   npx wrangler pages secret put FIREBASE_PROJECT_ID --project-name=ratify
+#   npx wrangler pages secret put FIREBASE_CLIENT_EMAIL --project-name=ratify
+#   npx wrangler pages secret put FIREBASE_PRIVATE_KEY --project-name=ratify

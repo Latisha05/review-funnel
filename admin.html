@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EESWEB Admin Panel</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <meta name="description" content="EESWEB admin panel with full control over client settings, feedback, QR codes, and review events." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      /* EESWEB admin accent overrides */
+      .sidebar { background: #0f0f1a; }
+      .sidebar-brand h2 {
+        background: linear-gradient(135deg, #a5b4fc, #818cf8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .sidebar-brand span { color: rgba(255,255,255,0.5); }
+      .sidebar-footer { border-top: 1px solid rgba(255,255,255,0.08); }
+      .sidebar-footer-label {
+        font-size: 0.72rem;
+        color: rgba(255,255,255,0.35);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-align: center;
+        padding: 10px 0 4px;
+      }
+      .menu-item { color: rgba(255,255,255,0.6); }
+      .menu-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+      .menu-item.is-active { background: rgba(99,102,241,0.18); color: #a5b4fc; }
+      .admin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #a5b4fc;
+        background: rgba(99,102,241,0.15);
+        border: 1px solid rgba(99,102,241,0.3);
+        border-radius: 20px;
+        padding: 3px 10px;
+        margin-top: 2px;
+      }
+      .ra-logomark {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: #fff;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .ra-logomark img { width: 100%; height: 100%; object-fit: contain; }
+
+      /* Prompt Tester layout */
+      .tester-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 980px) {
+        .tester-layout { grid-template-columns: 1fr; }
+      }
+      .tester-pane { min-height: 100%; }
+      .tester-prompt-box {
+        width: 100%;
+        min-height: 420px;
+        resize: vertical;
+        font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+        font-size: 0.92rem;
+        line-height: 1.55;
+      }
+      .tester-prompt-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .tester-chip-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .tester-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 13px;
+        border: 1px solid var(--border, #d9d9e3);
+        border-radius: 20px;
+        background: #fff;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.15s ease;
+      }
+      .tester-chip:hover { border-color: #818cf8; }
+      .tester-chip.is-selected {
+        background: rgba(99,102,241,0.12);
+        border-color: #818cf8;
+        color: #4f46e5;
+        font-weight: 600;
+      }
+      .tester-result-box {
+        min-height: 160px;
+        padding: 16px;
+        border: 1px solid var(--border, #d9d9e3);
+        border-radius: 12px;
+        background: #f8f8fc;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #1f1f2e;
+        white-space: pre-wrap;
+      }
+      .tester-result-box.is-loading { color: #888; font-style: italic; }
+      .tester-result-box.is-error { color: var(--danger, #dc2626); border-color: var(--danger, #dc2626); }
+    </style>
+  </head>
+  <body class="dashboard-body">
+    <div class="dashboard-container">
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+          <div class="brand-logo ra-logomark">
+            <img src="ratify-logo.png" alt="EESWEB Logo" />
+          </div>
+          <div class="brand-text">
+            <h2>EESWEB</h2>
+            <span id="sidebarBusinessName">Admin Panel</span>
+          </div>
+        </div>
+
+        <nav class="sidebar-menu" aria-label="Admin panel navigation">
+          <button class="menu-item is-active" data-page="overview" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+            Overview
+          </button>
+          <button class="menu-item" data-page="feedback" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Feedback Inbox
+            <span class="badge badge-danger" id="feedbackCountBadge">0</span>
+          </button>
+          <button class="menu-item" data-page="qrcodes" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            QR Links
+          </button>
+          <button class="menu-item" data-page="reviews" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Review Events
+          </button>
+          <button class="menu-item" data-page="settings" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </button>
+          <button class="menu-item" data-page="tester" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6l-5 9a2 2 0 0 0 1.8 3h12.4a2 2 0 0 0 1.8-3l-5-9V2"/><path d="M7 2h10"/><path d="M7 16h10"/></svg>
+            Prompt Tester
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="connection-status badge" id="connectionBadge">
+            <span class="status-dot"></span>
+            <span class="status-text">Connecting</span>
+          </div>
+          <a class="view-live-button" id="openReviewPageLink" href="/?business=shelar-tvs" target="_blank" rel="noreferrer">Open review page</a>
+          <a class="view-live-button" id="openClientDashboardLink" href="/dashboard" target="_blank" rel="noreferrer" style="margin-top: 6px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);">Open client dashboard</a>
+          <p class="sidebar-footer-label">EESWEB Admin</p>
+        </div>
+      </aside>
+
+      <main class="dashboard-main">
+        <header class="dashboard-navbar">
+          <button class="mobile-menu-button" id="mobileMenuButton" type="button" aria-label="Open admin menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="navbar-left">
+            <p class="breadcrumb">EESWEB</p>
+            <h1 id="pageTitle">Overview</h1>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="admin-badge">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+              Admin
+            </span>
+            <select id="clientFilter" style="background:#1f1f2e;color:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:6px 12px;font-size:0.85rem;font-weight:500;cursor:pointer;outline:none;" aria-label="Select client">
+              <option value="shelar-tvs">Shelar TVS</option>
+              <option value="eesweb">EESWEB</option>
+            </select>
+            <a class="secondary-button compact-button" id="openClientDashboardButton" href="/dashboard" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">Open Dashboard</a>
+            <button class="secondary-button compact-button" id="refreshDataButton" type="button">Refresh</button>
+            <button class="secondary-button compact-button" id="logoutButton" type="button">Log out</button>
+          </div>
+        </header>
+
+        <div class="dashboard-content">
+          <!-- Overview -->
+          <section class="dashboard-view is-active" id="view-overview">
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-icon icon-blue">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </div>
+                <div class="stat-data">
+                  <span class="stat-label">Total QR Scans</span>
+                  <strong class="stat-value" id="totalScans">0</strong>
+                  <span class="stat-trend" id="scanSourceLabel">All time</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon icon-yellow">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
+                <div class="stat-data">
+                  <span class="stat-label">Average Rating</span>
+                  <strong class="stat-value" id="avgRating">0.0</strong>
+                  <span class="stat-trend" id="totalRatingsCount">0 ratings logged</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon icon-green">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div class="stat-data">
+                  <span class="stat-label">Google Review Clicks</span>
+                  <strong class="stat-value" id="reviewClicks">0</strong>
+                  <span class="stat-trend" id="conversionPercentage">0% of positive ratings</span>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon icon-red">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                </div>
+                <div class="stat-data">
+                  <span class="stat-label">Private Feedback</span>
+                  <strong class="stat-value" id="negativeFeedback">0</strong>
+                  <span class="stat-trend" id="negativePercentage">0 low ratings routed privately</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="rating-distribution-bar chart-container">
+              <div class="chart-header">
+                <div>
+                  <h3>Rating breakdown</h3>
+                  <span class="subtitle">Distribution across all collected ratings</span>
+                </div>
+                <div class="filter-group">
+                  <select id="branchFilter" aria-label="Filter by branch">
+                    <option value="">All branches</option>
+                  </select>
+                </div>
+              </div>
+              <div class="rating-dist-rows" id="ratingDistRows">
+                <div class="dist-row"><span class="dist-label">5 ⭐</span><div class="dist-track"><div class="dist-fill dist-5" id="dist5" style="width:0%"></div></div><span class="dist-count" id="distCount5">0</span></div>
+                <div class="dist-row"><span class="dist-label">4 ⭐</span><div class="dist-track"><div class="dist-fill dist-4" id="dist4" style="width:0%"></div></div><span class="dist-count" id="distCount4">0</span></div>
+                <div class="dist-row"><span class="dist-label">3 ⭐</span><div class="dist-track"><div class="dist-fill dist-3" id="dist3" style="width:0%"></div></div><span class="dist-count" id="distCount3">0</span></div>
+                <div class="dist-row"><span class="dist-label">2 ⭐</span><div class="dist-track"><div class="dist-fill dist-2" id="dist2" style="width:0%"></div></div><span class="dist-count" id="distCount2">0</span></div>
+                <div class="dist-row"><span class="dist-label">1 ⭐</span><div class="dist-track"><div class="dist-fill dist-1" id="dist1" style="width:0%"></div></div><span class="dist-count" id="distCount1">0</span></div>
+              </div>
+            </div>
+
+            <div class="charts-row tables-layout">
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div>
+                    <h3>Latest ratings</h3>
+                    <span class="subtitle">Data sent from the mobile review page</span>
+                  </div>
+                </div>
+                <div class="table-wrapper">
+                  <table class="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Rating</th>
+                        <th>QR</th>
+                        <th>Created</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ratingsTable"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div>
+                    <h3>Dynamic QR target</h3>
+                    <span class="subtitle">Use this URL in a dynamic QR provider</span>
+                  </div>
+                </div>
+                <div class="copy-field">
+                  <input id="dynamicQrUrl" readonly aria-label="Dynamic QR URL" />
+                  <button class="secondary-button" id="copyQrButton" type="button">Copy</button>
+                </div>
+                <a class="view-live-button light-button" id="openQrLink" href="/r/shelar-tvs-main" target="_blank" rel="noreferrer">Open QR link</a>
+              </div>
+            </div>
+          </section>
+
+          <!-- Feedback Inbox -->
+          <section class="dashboard-view" id="view-feedback">
+            <div class="feedback-control-bar">
+              <div class="search-field">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="feedbackSearch" type="text" placeholder="Search feedback, name, phone, or issue" />
+              </div>
+            </div>
+            <div class="feedback-cards-grid" id="feedbackCardsList"></div>
+          </section>
+
+          <!-- QR Links -->
+          <section class="dashboard-view" id="view-qrcodes">
+            <div class="qr-layout-grid">
+              <div class="chart-container grid-span-2">
+                <div class="chart-header">
+                  <div>
+                    <h3>QR registry</h3>
+                    <span class="subtitle">Create one link per branch, staff member, source, or campaign</span>
+                  </div>
+                </div>
+                <div class="table-wrapper">
+                  <table class="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>QR</th>
+                        <th>QR Link</th>
+                        <th>Label</th>
+                        <th>Branch</th>
+                        <th>Destination</th>
+                        <th>Source / campaign</th>
+                        <th>Scans</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="qrCodesRegistryTable"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="chart-container">
+                <div class="chart-header">
+                  <div>
+                    <h3>Create QR tracker</h3>
+                    <span class="subtitle">Create the URL here, then generate the QR image on any free tool</span>
+                  </div>
+                </div>
+                <form id="createQrForm" class="sidebar-form">
+                  <div class="field-group">
+                    <label for="regQrId">QR code ID</label>
+                    <input id="regQrId" placeholder="shelar-tvs-wakad" required />
+                  </div>
+                  <div class="field-group">
+                    <label for="regQrLabel">Label</label>
+                    <input id="regQrLabel" placeholder="e.g. Main entrance QR" required />
+                  </div>
+                  <div class="field-group">
+                    <label for="regBranchName">Branch</label>
+                    <input id="regBranchName" placeholder="Main" />
+                  </div>
+                  <div class="field-group">
+                    <label for="regRedirectUrl">Redirect / review page URL <span class="field-optional">(optional)</span></label>
+                    <input id="regRedirectUrl" placeholder="/?business=shelar-tvs&branch=wakad&qr=shelar-tvs-wakad" />
+                  </div>
+                  <div class="field-group">
+                    <label for="regQrImageUrl">QR PNG URL/path <span class="field-optional">(optional)</span></label>
+                    <input id="regQrImageUrl" placeholder="/qr-codes/wakad.png" />
+                  </div>
+                  <div class="field-group">
+                    <label for="regStaff">Staff / source <span class="field-optional">(optional)</span></label>
+                    <input id="regStaff" placeholder="e.g. Rahul, Table 5, Website footer" />
+                  </div>
+                  <button class="primary-button" type="submit">Create tracker</button>
+                  <p id="qrCreationStatus" class="form-status"></p>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <!-- Review Events -->
+          <section class="dashboard-view" id="view-reviews">
+            <div class="chart-container">
+              <div class="chart-header">
+                <div>
+                  <h3>Review events</h3>
+                  <span class="subtitle">Saved only when the customer clicks the review action or marks it posted</span>
+                </div>
+              </div>
+              <div class="feedback-cards-grid" id="reviewEventsList"></div>
+            </div>
+          </section>
+
+          <!-- Settings — full admin access including system prompt -->
+          <section class="dashboard-view" id="view-settings">
+            <form id="settingsForm" class="settings-layout-form">
+              <div class="settings-grid-layout">
+
+                <!-- Business setup -->
+                <div class="chart-container">
+                  <div class="chart-header">
+                    <div>
+                      <h3>Business setup</h3>
+                      <span class="subtitle">Clone-friendly identity and Google profile settings</span>
+                    </div>
+                  </div>
+                  <div class="form-body">
+                    <div class="field-group">
+                      <label for="businessNameInput">Business name</label>
+                      <input id="businessNameInput" name="APP_BUSINESS_NAME" />
+                    </div>
+                    <div class="field-group">
+                      <label for="baseUrlInput">Base URL</label>
+                      <input id="baseUrlInput" name="APP_BASE_URL" />
+                    </div>
+                    <div class="dashboard-grid grid-2">
+                      <div class="field-group">
+                        <label for="businessIdInput">Business ID</label>
+                        <input id="businessIdInput" name="BUSINESS_ID" />
+                      </div>
+                      <div class="field-group">
+                        <label for="branchIdInput">Branch ID</label>
+                        <input id="branchIdInput" name="BRANCH_ID" />
+                      </div>
+                    </div>
+                    <div class="dashboard-grid grid-2">
+                      <div class="field-group">
+                        <label for="branchNameInput">Branch name</label>
+                        <input id="branchNameInput" name="BRANCH_NAME" />
+                      </div>
+                      <div class="field-group">
+                        <label for="qrCodeInput">Default QR ID</label>
+                        <input id="qrCodeInput" name="QR_CODE_ID" />
+                      </div>
+                    </div>
+                    <div class="field-group">
+                      <label for="qrLabelInput">Default QR label</label>
+                      <input id="qrLabelInput" name="QR_CODE_LABEL" />
+                    </div>
+                    <div class="field-group">
+                      <label for="placeIdInput">Google Place ID</label>
+                      <input id="placeIdInput" name="GOOGLE_PLACE_ID" placeholder="Optional while testing" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- AI review voice -->
+                <div class="chart-container">
+                  <div class="chart-header">
+                    <div>
+                      <h3>AI review voice</h3>
+                      <span class="subtitle">Controls the generated review style on mobile</span>
+                    </div>
+                  </div>
+                  <div class="form-body">
+                    <div class="dashboard-grid grid-2">
+                      <div class="field-group">
+                        <label for="aiToneSelector">Default tone</label>
+                        <select id="aiToneSelector" name="AI_TONE">
+                          <option value="Professional">Professional</option>
+                          <option value="Appreciative">Appreciative</option>
+                          <option value="Enthusiastic">Enthusiastic</option>
+                        </select>
+                      </div>
+                      <div class="field-group">
+                        <label for="aiLengthSelector">Default length</label>
+                        <select id="aiLengthSelector" name="AI_LENGTH">
+                          <option value="short">Short</option>
+                          <option value="medium">Medium</option>
+                          <option value="long">Long</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- System prompt — admin only -->
+                <div class="chart-container">
+                  <div class="chart-header">
+                    <div>
+                      <h3>AI system prompt</h3>
+                      <span class="subtitle">Master instruction that shapes every generated review — admin only</span>
+                    </div>
+                  </div>
+                  <div class="form-body">
+                    <div class="field-group">
+                      <label for="systemPromptInput">System prompt</label>
+                      <textarea id="systemPromptInput" name="REVIEW_SYSTEM_PROMPT" rows="10" placeholder="You write realistic customer review suggestions for Google Reviews…"></textarea>
+                      <p class="field-help">Changes take effect immediately on the next review generation. Keep it concise and avoid instructing the AI to use specific keywords or sound promotional.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Review parameters -->
+                <div class="chart-container">
+                  <div class="chart-header">
+                    <div>
+                      <h3>Review parameters</h3>
+                      <span class="subtitle">One short phrase per line</span>
+                    </div>
+                  </div>
+                  <div class="form-body">
+                    <div class="field-group">
+                      <label for="reviewTopicsInput">Positive checkboxes</label>
+                      <textarea id="reviewTopicsInput" name="REVIEW_TOPICS" rows="7"></textarea>
+                    </div>
+                    <div class="field-group">
+                      <label for="feedbackTopicsInput">Private feedback checkboxes</label>
+                      <textarea id="feedbackTopicsInput" name="FEEDBACK_TOPICS" rows="7"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="settings-actions-footer">
+                <button class="primary-button save-settings-btn" type="submit">Save settings</button>
+                <span id="dashboardStatus" class="dashboard-status-label" role="status"></span>
+              </div>
+            </form>
+          </section>
+
+          <!-- Prompt Tester — admin only -->
+          <section class="dashboard-view" id="view-tester">
+            <div class="tester-layout">
+              <!-- Left: editable prompt -->
+              <div class="chart-container tester-pane">
+                <div class="chart-header">
+                  <div>
+                    <h3>System prompt</h3>
+                    <span class="subtitle">Edit and test freely. Nothing is saved until you click Save prompt.</span>
+                  </div>
+                </div>
+                <div class="form-body">
+                  <textarea id="testerPromptInput" class="tester-prompt-box" rows="18" placeholder="Loading saved prompt…"></textarea>
+                  <div class="tester-prompt-actions">
+                    <button class="secondary-button" id="testerResetPromptButton" type="button">Reset to saved</button>
+                    <button class="primary-button" id="testerSavePromptButton" type="button">Save prompt</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: controls + result -->
+              <div class="chart-container tester-pane">
+                <div class="chart-header">
+                  <div>
+                    <h3>Test review output</h3>
+                    <span class="subtitle">Pick chips and generate to preview a review with the prompt on the left</span>
+                  </div>
+                </div>
+                <div class="form-body">
+                  <div class="field-group">
+                    <label>Topics</label>
+                    <div id="testerChips" class="tester-chip-grid"></div>
+                  </div>
+                  <div class="dashboard-grid grid-2">
+                    <div class="field-group">
+                      <label for="testerStaffInput">Staff name <span class="field-optional">(optional)</span></label>
+                      <input id="testerStaffInput" placeholder="e.g. Rahul" />
+                    </div>
+                    <div class="field-group">
+                      <label for="testerModelInput">Vehicle model <span class="field-optional">(optional)</span></label>
+                      <input id="testerModelInput" placeholder="e.g. Apache RTR 160" />
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label for="testerNoteInput">Custom note <span class="field-optional">(for the "Others" chip)</span></label>
+                    <input id="testerNoteInput" maxlength="160" placeholder="e.g. they helped me with insurance renewal quickly" />
+                  </div>
+                  <div class="field-group">
+                    <label for="testerLengthSelect">Length</label>
+                    <select id="testerLengthSelect">
+                      <option value="short">Short</option>
+                      <option value="medium" selected>Medium</option>
+                      <option value="long">Long</option>
+                    </select>
+                  </div>
+                  <button class="primary-button" id="testerGenerateButton" type="button">Generate test review</button>
+                  <div class="field-group" style="margin-top:16px;">
+                    <label>Generated review</label>
+                    <div id="testerResultBox" class="tester-result-box" aria-live="polite">The generated review will appear here.</div>
+                  </div>
+                  <p id="testerStatus" class="form-status"></p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="admin.js"></script>
+  </body>
+</html>
