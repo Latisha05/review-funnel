@@ -958,29 +958,33 @@ body[data-step="rating"] .rating-grid {
 
 
 .dashboard-body {
-  font-family: 'Plus Jakarta Sans', 'Outfit', Inter, sans-serif;
-  background-color: #f1f5f9;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.011em;
+  background-color: #f8fafc;
   color: #0f172a;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   overflow-x: hidden;
-  --bg: #f1f5f9;
+  --bg: #f8fafc;
   --panel: #ffffff;
   --text: #0f172a;
   --primary: #4f46e5;
   --primary-dark: #3730a3;
-  --primary-soft: #e0e7ff;
+  --primary-soft: #eef2ff;
   --accent: #eab308;
   --accent-soft: #fef9c3;
   --danger: #ef4444;
   --success: #10b981;
   --muted: #64748b;
-  --line: #e2e8f0;
+  --line: #e8edf3;
   --line-strong: #cbd5e1;
   --surface: #f8fafc;
-  --shadow: 0 10px 30px -10px rgba(79, 70, 229, 0.08), 0 1px 3px rgba(0, 0, 0, 0.02);
-  --shadow-glow: 0 20px 40px -15px rgba(79, 70, 229, 0.15);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.04);
+  --shadow-glow: 0 12px 32px -12px rgba(79, 70, 229, 0.18);
 }
 
 /* Custom Scrollbar for a sleek modern look */
@@ -1205,6 +1209,23 @@ body[data-step="rating"] .rating-grid {
   letter-spacing: -0.02em;
 }
 
+/* Sidebar RatifyAI wordmark - deliberately different from the gradient business title.
+   Clean white text with a cyan "AI" accent and roomy tracking, so the product brand
+   and the business name (Shelar TVS) never look alike. */
+.brand-name-highlight {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.28rem !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  letter-spacing: -0.01em;
+  -webkit-text-fill-color: #f8fafc;
+}
+.brand-name-highlight .brand-ai {
+  color: #38bdf8;
+  -webkit-text-fill-color: #38bdf8;
+  font-weight: 800;
+}
+
 .brand-text span {
   display: block;
   font-size: 0.72rem;
@@ -1254,9 +1275,9 @@ body[data-step="rating"] .rating-grid {
 }
 
 .menu-item.is-active {
-  background: #4f46e5;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
   color: #ffffff;
-  box-shadow: 0 8px 20px -8px rgba(79, 70, 229, 0.4);
+  box-shadow: 0 10px 22px -10px rgba(79, 70, 229, 0.7);
 }
 
 .menu-item.is-active svg {
@@ -1474,15 +1495,18 @@ body[data-step="rating"] .rating-grid {
 
 .business-gradient-title {
   width: fit-content;
+  max-width: 100%;
   margin: 0;
+  padding: 0.04em 0.12em 0.1em 0;
   font-family: 'Outfit', sans-serif;
-  font-size: clamp(2rem, 3vw, 2.8rem) !important;
-  font-weight: 900 !important;
-  line-height: 1 !important;
-  letter-spacing: -0.045em !important;
+  font-size: clamp(2rem, 3vw, 2.7rem) !important;
+  font-weight: 800 !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.025em !important;
   background: linear-gradient(110deg, #0ea5e9 0%, #2563eb 42%, #6366f1 72%, #8b5cf6 100%);
   -webkit-background-clip: text;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
   color: transparent !important;
 }
 
@@ -1639,19 +1663,22 @@ body[data-step="rating"] .rating-grid {
 }
 
 .stat-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
   display: grid;
   place-items: center;
   flex-shrink: 0;
+  color: #fff;
+  box-shadow: 0 6px 14px -6px var(--stat-glow, rgba(79, 70, 229, 0.5));
 }
+.stat-icon svg { width: 22px; height: 22px; }
 
-.icon-blue { background: rgba(79, 70, 229, 0.08); color: var(--primary); }
-.icon-yellow { background: rgba(234, 179, 8, 0.08); color: var(--accent); }
-.icon-green { background: rgba(16, 185, 129, 0.08); color: var(--success); }
-.icon-red { background: rgba(239, 68, 68, 0.08); color: var(--danger); }
-.icon-purple { background: rgba(168, 85, 247, 0.08); color: #a855f7; }
+.icon-blue   { background: linear-gradient(135deg, #6366f1, #4f46e5); --stat-glow: rgba(79, 70, 229, 0.45); }
+.icon-yellow { background: linear-gradient(135deg, #fbbf24, #f59e0b); --stat-glow: rgba(245, 158, 11, 0.45); }
+.icon-green  { background: linear-gradient(135deg, #34d399, #10b981); --stat-glow: rgba(16, 185, 129, 0.45); }
+.icon-red    { background: linear-gradient(135deg, #fb7185, #ef4444); --stat-glow: rgba(239, 68, 68, 0.45); }
+.icon-purple { background: linear-gradient(135deg, #c084fc, #a855f7); --stat-glow: rgba(168, 85, 247, 0.45); }
 
 .stat-data {
   display: flex;
@@ -1669,11 +1696,13 @@ body[data-step="rating"] .rating-grid {
 }
 
 .stat-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.85rem;
-  font-weight: 800;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.9rem;
+  font-weight: 750;
   color: var(--text);
   line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
   margin: 6px 0 4px;
 }
 
@@ -1737,11 +1766,11 @@ body[data-step="rating"] .rating-grid {
 
 .chart-header h3 {
   margin: 0;
-  font-family: 'Outfit', sans-serif;
-  font-size: 1.05rem;
-  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 650;
   color: var(--text);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 .chart-header .subtitle {
