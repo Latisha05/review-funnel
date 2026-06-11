@@ -494,8 +494,8 @@ async function handleReviewGenerate(body, request) {
       },
     ],
     generationConfig: {
-      temperature: mode === "short" ? 0.6 : 0.7,
-      topP: 0.9,
+      temperature: mode === "short" ? 0.8 : 0.9,
+      topP: 0.95,
       maxOutputTokens: mode === "long" ? 600 : mode === "medium" ? 400 : 250,
       // gemini-3.5-flash spends ~400+ tokens on internal reasoning before writing, which truncates
       // short reviews. We don't need reasoning for a one-paragraph review, so disable it.
