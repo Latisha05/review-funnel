@@ -1,3 +1,5 @@
+name = "review-funnel"
+compatibility_date = "2024-09-23"
 pages_build_output_dir = "."
 
 # All env vars + secrets are managed in the Cloudflare Pages dashboard
