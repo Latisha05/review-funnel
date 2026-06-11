@@ -210,7 +210,7 @@ function getPublicConfig(qrCodeId = "", businessId = "") {
   const business = getLocalBusinessById(resolvedBusinessId);
   const branchId = qrCode?.branchId || env.BRANCH_ID || "main";
   return {
-    businessName: business?.name || env.APP_BUSINESS_NAME || "Your Business",
+    businessName: qrCode?.businessName || business?.name || env.APP_BUSINESS_NAME || "Your Business",
     businessId: resolvedBusinessId,
     logoUrl: business?.logoUrl || env.APP_LOGO_URL || "",
     branchId,
@@ -1014,7 +1014,7 @@ async function getTenantPublicConfig(clientId = "", qrCodeId = "", qrCode = null
 
   return {
     ...fallback,
-    businessName: business?.name || fallback.businessName,
+    businessName: resolvedQr?.businessName || business?.name || fallback.businessName,
     businessId: resolvedClientId,
     logoUrl: business?.logoUrl || fallback.logoUrl || "",
     googlePlaceId: resolvedQr?.googlePlaceId || business?.googlePlaceId || fallback.googlePlaceId,

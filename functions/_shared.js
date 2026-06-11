@@ -18,7 +18,7 @@ export function getEnv(ctx) {
 
 export function getPublicConfig(env, qrCode = null, business = null) {
   return {
-    businessName: business?.name || env.APP_BUSINESS_NAME || "Your Business",
+    businessName: qrCode?.businessName || business?.name || env.APP_BUSINESS_NAME || "Your Business",
     businessId: business?.businessId || qrCode?.businessId || env.BUSINESS_ID || "demo_business",
     logoUrl: business?.logoUrl || env.APP_LOGO_URL || "",
     branchId: qrCode?.branchId || env.BRANCH_ID || "main",
@@ -27,7 +27,7 @@ export function getPublicConfig(env, qrCode = null, business = null) {
     qrLabel: qrCode?.label || env.QR_CODE_LABEL || "Default QR",
     qrSource: qrCode?.source || qrCode?.staff || qrCode?.campaign || "",
     campaign: qrCode?.campaign || "",
-    googlePlaceId: business?.googlePlaceId || env.GOOGLE_PLACE_ID || "",
+    googlePlaceId: qrCode?.googlePlaceId || business?.googlePlaceId || env.GOOGLE_PLACE_ID || "",
     reviewModel: env.GEMINI_MODEL || "gemini-3.5-flash-lite",
     reviewSystemPrompt: business?.reviewSystemPrompt || env.REVIEW_SYSTEM_PROMPT || "Write one authentic Google review as a real customer. Use natural, conversational language. Mention the business name naturally. Include relevant keywords a real customer would use (service quality, staff, experience, location if relevant). Do NOT invent specific details not provided (no made-up staff names, vehicle models, prices, dates, or outcomes). Do NOT use marketing language, emojis, hashtags, or superlatives like 'best ever'. Output only the review text.",
     reviewTopics: parseList(business?.reviewTopics || env.REVIEW_TOPICS, "Quality,Service,Value,Cleanliness,Staff,Ambience"),
