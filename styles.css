@@ -2898,6 +2898,14 @@ body[data-step="rating"] .rating-grid {
   letter-spacing: 0;
 }
 
+.field-required {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent, #dc2626);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .grid-2 {
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   column-gap: 12px;

@@ -222,9 +222,6 @@ function renderOverview() {
   elements.feedbackCountBadge.hidden = pendingFeedback.length === 0;
   const businessName = dbState.settings.APP_BUSINESS_NAME || "Dashboard";
   elements.sidebarBusinessName.textContent = businessName;
-  if (elements.dashboardBusinessTitle) {
-    elements.dashboardBusinessTitle.textContent = businessName;
-  }
   if (elements.dashboardBreadcrumb) {
     elements.dashboardBreadcrumb.textContent = `${businessName} Dashboard`;
   }

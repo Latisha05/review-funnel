@@ -222,6 +222,36 @@ document.querySelector("#feedbackStep").addEventListener("submit", (event) => {
   const data = new FormData(event.currentTarget);
   const issues = data.getAll("issue");
   const message = String(data.get("message") || "").trim();
+  const name = String(data.get("name") || "").trim();
+  const phone = String(data.get("phone") || "").trim();
+
+  const nameField = document.querySelector("#customerName");
+  const phoneField = document.querySelector("#customerPhone");
+  const flagInvalid = (field, msg) => {
+    showToast(msg);
+    if (field) {
+      field.setAttribute("aria-invalid", "true");
+      field.classList.add("is-invalid");
+      field.focus();
+    }
+  };
+
+  // Name is mandatory for private feedback.
+  if (!name) {
+    flagInvalid(nameField, "Please enter your name.");
+    return;
+  }
+
+  // Phone is mandatory and must be a valid 10-digit Indian mobile number.
+  const phoneDigits = phone.replace(/\D/g, "");
+  if (!phone) {
+    flagInvalid(phoneField, "Please enter your phone number.");
+    return;
+  }
+  if (phoneDigits.length < 10) {
+    flagInvalid(phoneField, "Please enter a valid phone number.");
+    return;
+  }
 
   // If "Other" is selected, the review message becomes mandatory
   const otherSelected = issues.some((issue) => issue.toLowerCase() === "other");
@@ -240,8 +270,8 @@ document.querySelector("#feedbackStep").addEventListener("submit", (event) => {
     rating: state.rating,
     ratingEventId: state.ratingEventId,
     message,
-    name: data.get("name"),
-    phone: data.get("phone"),
+    name,
+    phone,
     callback: data.get("callback") === "on",
     issues,
     context: config.qrContext,
@@ -342,13 +372,15 @@ function renderTopicChips() {
     input.addEventListener("change", updateFeedbackMessageRequirement);
   });
 
-  const messageField = document.querySelector("#feedbackMessage");
-  if (messageField) {
-    messageField.addEventListener("input", () => {
-      messageField.removeAttribute("aria-invalid");
-      messageField.classList.remove("is-invalid");
-    });
-  }
+  ["#feedbackMessage", "#customerName", "#customerPhone"].forEach((sel) => {
+    const field = document.querySelector(sel);
+    if (field) {
+      field.addEventListener("input", () => {
+        field.removeAttribute("aria-invalid");
+        field.classList.remove("is-invalid");
+      });
+    }
+  });
 }
 
 function updateFeedbackMessageRequirement() {
