@@ -7,5 +7,7 @@ export async function onRequestGet(ctx) {
   if (!hasReviewContext) {
     return Response.redirect(new URL("/login", ctx.request.url).href, 302);
   }
-  return ctx.env.ASSETS.fetch(new Request(new URL("/index.html", ctx.request.url), ctx.request));
+  // Serve the review page by fetching the original (clean "/") request — NOT /index.html,
+  // which Cloudflare 308-redirects back to "/" and would re-invoke this function (loop).
+  return ctx.env.ASSETS.fetch(ctx.request);
 }
