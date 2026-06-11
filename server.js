@@ -61,6 +61,15 @@ if (process.argv.includes("--bootstrap")) {
         const routeUrl = new URL(request.url, "http://localhost");
         const pathname = routeUrl.pathname;
 
+        // Bare root with no review context goes to login. Real QR links (?business=/?qr=) still open the review page.
+        if (request.method === "GET" && pathname === "/") {
+          const hasReviewContext = routeUrl.searchParams.has("business") || routeUrl.searchParams.has("qr");
+          if (!hasReviewContext) {
+            sendRedirect(response, "/login");
+            return;
+          }
+        }
+
         if (request.method === "GET" && pathname === "/login") {
           const session = await getActiveSession(request);
           if (session) {
