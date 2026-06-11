@@ -29,7 +29,7 @@ export function getPublicConfig(env, qrCode = null, business = null) {
     campaign: qrCode?.campaign || "",
     googlePlaceId: business?.googlePlaceId || env.GOOGLE_PLACE_ID || "",
     reviewModel: env.GEMINI_MODEL || "gemini-3.5-flash-lite",
-    reviewSystemPrompt: business?.reviewSystemPrompt || env.REVIEW_SYSTEM_PROMPT || "You write realistic customer review suggestions for Google Reviews. Output only one review, with no title, no bullets, no quotes, and no explanation. Sound like a genuine customer, not a marketer.",
+    reviewSystemPrompt: business?.reviewSystemPrompt || env.REVIEW_SYSTEM_PROMPT || "Write one authentic Google review as a real customer. Use natural, conversational language. Mention the business name naturally. Include relevant keywords a real customer would use (service quality, staff, experience, location if relevant). Do NOT invent specific details not provided (no made-up staff names, vehicle models, prices, dates, or outcomes). Do NOT use marketing language, emojis, hashtags, or superlatives like 'best ever'. Output only the review text.",
     reviewTopics: parseList(business?.reviewTopics || env.REVIEW_TOPICS, "Quality,Service,Value,Cleanliness,Staff,Ambience"),
     feedbackTopics: parseList(business?.feedbackTopics || env.FEEDBACK_TOPICS, "Staff behavior,Food quality,Delay,Cleanliness,Wrong order,Pricing issue"),
     aiTone: business?.aiTone || env.AI_TONE || "Professional",

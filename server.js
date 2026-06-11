@@ -176,8 +176,8 @@ if (process.argv.includes("--bootstrap")) {
         sendJson(response, error.statusCode || 500, { error: error.message || "Server error" });
       }
     })
-    .listen(port, "127.0.0.1", () => {
-      console.log(`Review Funnel running at http://127.0.0.1:${port}`);
+    .listen(port, "0.0.0.0", () => {
+      console.log(`Review Funnel running at http://127.0.0.1:${port} (also reachable on your LAN IP)`);
     });
 }
 
@@ -449,6 +449,7 @@ async function handleReviewGenerate(body, request) {
   const topics = parseList(body?.topics || "", "").slice(0, 4);
   const staff = String(body?.staff || "").replace(/[^\p{L}\s.'-]/gu, "").trim().slice(0, 40);
   const vehicle = String(body?.vehicle || "").trim().slice(0, 40);
+  const note = String(body?.note || "").replace(/[\r\n]+/g, " ").trim().slice(0, 160);
   const recentReviews = Array.isArray(body?.recentReviews)
     ? body.recentReviews.map((review) => String(review || "").trim()).filter(Boolean).slice(0, 6)
     : [];
@@ -469,6 +470,7 @@ async function handleReviewGenerate(body, request) {
     topics,
     staff,
     vehicle,
+    note,
     recentReviews,
     systemPrompt,
   });
@@ -525,21 +527,27 @@ async function handleReviewGenerate(body, request) {
   throw new Error(lastError);
 }
 
-function buildReviewPrompt({ mode, topics, staff, vehicle, recentReviews, systemPrompt }) {
+function buildReviewPrompt({ mode, topics, staff, vehicle, note, recentReviews, systemPrompt }) {
   const lengthHints = {
-    short: "Keep it to a single short sentence.",
-    medium: "Keep it to about one to two short sentences.",
-    long: "Write a short paragraph of three to four sentences.",
+    short: "Keep it to one natural sentence, roughly 12 to 22 words.",
+    medium: "Keep it to two short sentences, roughly 25 to 40 words.",
+    long: "Keep it to two or three short sentences, roughly 40 to 60 words.",
   };
+
+  // "Others" is a placeholder chip backed by a free-text note - drop it from the appreciated list.
+  const displayedTopics = (topics || []).filter((t) => t.toLowerCase() !== "others");
 
   // The user turn carries ONLY what the admin actually selected. All behaviour
   // (tone, SEO, no-topic handling, formatting) is governed by the system prompt.
-  const topicLine = topics.length
-    ? `The customer specifically appreciated: ${topics.join(", ")}.`
+  const topicLine = displayedTopics.length
+    ? `The customer specifically appreciated: ${displayedTopics.join(", ")}.`
     : "";
 
   const staffLine = staff ? `Staff member who helped: ${staff}.` : "";
   const vehicleLine = vehicle ? `Vehicle model: ${vehicle}.` : "";
+  const noteLine = note
+    ? `In their own words, the customer said: "${note}". Turn this into a natural part of the review without copying it word-for-word, and do not add anything they did not say.`
+    : "";
 
   const recentLine = recentReviews.length
     ? `For variety, do not repeat the wording or opening of these recent reviews:\n${recentReviews.slice(0, 5).map((r, i) => `${i + 1}. ${r}`).join("\n")}`
@@ -549,6 +557,7 @@ function buildReviewPrompt({ mode, topics, staff, vehicle, recentReviews, system
     "Write one Google review for Shelar TVS based on the details below.",
     lengthHints[mode] || lengthHints.medium,
     topicLine,
+    noteLine,
     staffLine,
     vehicleLine,
     recentLine,

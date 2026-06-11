@@ -124,6 +124,12 @@ document.querySelectorAll(".rating-button").forEach((button) => {
 });
 
 positiveTopics.addEventListener("change", (e) => {
+  // Show/hide the free-text field when "Others" is toggled.
+  const changedEl = e.target;
+  if (changedEl && changedEl.type === "checkbox" && changedEl.value === "Others") {
+    updateOthersField(changedEl.checked);
+  }
+
   // Only generate once at least one chip is selected; otherwise re-show the "pick a chip" gate.
   if (hasSelectedTopics()) {
     setReviewControlsEnabled(true);
@@ -153,6 +159,22 @@ positiveTopics.addEventListener("change", (e) => {
 });
 reviewMode.addEventListener("change", () => scheduleGenerateReview());
 document.querySelector("#reviewTone").addEventListener("change", () => scheduleGenerateReview());
+
+// Regenerate as the reviewer types their custom "Others" note (debounced).
+const othersNoteInput = document.querySelector("#othersNote");
+if (othersNoteInput) {
+  othersNoteInput.addEventListener("input", () => {
+    if (isOthersSelected()) scheduleGenerateReview(600);
+  });
+}
+
+// Regenerate when the staff name is added/changed (debounced), so it gets woven in instantly.
+const staffNameInput = document.querySelector("#staffName");
+if (staffNameInput) {
+  staffNameInput.addEventListener("input", () => {
+    if (hasSelectedTopics()) scheduleGenerateReview(600);
+  });
+}
 
 document.querySelector("#regenerateButton").addEventListener("click", () => {
   if (!hasSelectedTopics()) {
@@ -401,16 +423,13 @@ function scheduleGenerateReview(delay = 220) {
 
 function getAutoMode(topics) {
   const count = state.generationCount;
+  // Keep reviews concise: never "long". Favour medium (1-2 sentences) with some short variation.
   if (topics.length >= 2) {
-    // With multiple topics rotate medium → long → medium → long
-    return count % 2 === 0 ? "medium" : "long";
+    // A couple of topics: mostly medium, occasionally short.
+    return ["medium", "short", "medium", "medium"][count % 4];
   }
-  if (topics.length === 1) {
-    // Single topic: short → medium → long → medium cycle
-    return ["medium", "long", "short", "medium"][count % 4];
-  }
-  // No topics: alternate short and medium only -- never long (too much to invent)
-  return count % 2 === 0 ? "medium" : "short";
+  // Single topic (or none): alternate short and medium so it stays brief.
+  return count % 2 === 0 ? "short" : "medium";
 }
 
 function getAutoTone() {
@@ -474,6 +493,8 @@ async function generateWithOpenRouter(mode, tone, topics) {
   const staffEl = document.querySelector("#staffName");
   const staff = staffEl ? staffEl.value.replace(/[^\p{L}\s.'-]/gu, "").replace(/\s+/g, " ").trim().slice(0, 40) : "";
 
+  const note = isOthersSelected() ? getOthersNote() : "";
+
   const response = await fetch(apiUrl("/api/review/generate"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -483,6 +504,7 @@ async function generateWithOpenRouter(mode, tone, topics) {
       topics,
       staff,
       vehicle: state.vehicleModel || "",
+      note,
       rating: state.rating,
       qrCodeId: config.qrCodeId,
       recentReviews,
@@ -1141,6 +1163,28 @@ function getSelectedTopics() {
 
 function hasSelectedTopics() {
   return getSelectedTopics().length > 0;
+}
+
+function isOthersSelected() {
+  return getSelectedTopics().includes("Others");
+}
+
+function getOthersNote() {
+  const el = document.querySelector("#othersNote");
+  return el ? el.value.trim().slice(0, 160) : "";
+}
+
+// Show/hide the free-text "Others" field. Clears it when hidden.
+function updateOthersField(show) {
+  const field = document.querySelector("#othersField");
+  const input = document.querySelector("#othersNote");
+  if (!field) return;
+  field.hidden = !show;
+  if (show) {
+    if (input) input.focus();
+  } else if (input) {
+    input.value = "";
+  }
 }
 
 // At least one topic chip is mandatory before a review can be generated, copied, or posted.

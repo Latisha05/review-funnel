@@ -55,6 +55,7 @@ const elements = {
   testerChips: document.querySelector("#testerChips"),
   testerStaffInput: document.querySelector("#testerStaffInput"),
   testerModelInput: document.querySelector("#testerModelInput"),
+  testerNoteInput: document.querySelector("#testerNoteInput"),
   testerLengthSelect: document.querySelector("#testerLengthSelect"),
   testerGenerateButton: document.querySelector("#testerGenerateButton"),
   testerResultBox: document.querySelector("#testerResultBox"),
@@ -592,6 +593,7 @@ async function runPromptTest() {
     topics: topics.join(","),
     staff: elements.testerStaffInput.value.trim(),
     vehicle: elements.testerModelInput.value.trim(),
+    note: elements.testerNoteInput ? elements.testerNoteInput.value.trim() : "",
   };
 
   elements.testerGenerateButton.disabled = true;

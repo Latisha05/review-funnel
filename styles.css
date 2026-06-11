@@ -365,6 +365,11 @@ h2 {
   filter: drop-shadow(0 0 0 4px rgba(245, 158, 11, 0.25));
 }
 
+/* The HTML hidden attribute must always win over display rules below. */
+[hidden] {
+  display: none !important;
+}
+
 .field-group {
   display: grid;
   gap: 7px;
