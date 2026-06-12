@@ -19,7 +19,7 @@ export async function onRequestPost(ctx) {
     const branchId = normalizeSlug(body.branchId || finalBranchName || env.BRANCH_ID || "main");
     const config = getPublicConfig(env, null, { businessId: clientId });
     const redirectUrl = normalizeOptionalUrl(body.redirectUrl);
-    const qrImageUrl = normalizeOptionalUrl(body.qrImageUrl);
+    const qrImageUrl = normalizeQrImage(body.qrImageUrl);
 
     const payload = {
       qrCodeId,
@@ -80,4 +80,15 @@ function normalizeOptionalUrl(value) {
   if (!text) return "";
   if (/^https?:\/\//i.test(text) || text.startsWith("/")) return text;
   return "";
+}
+
+// Accepts an uploaded base64 data-URL image, an http(s)/path URL, or empty.
+function normalizeQrImage(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^data:image\/(png|jpe?g|webp|svg\+xml);base64,/i.test(text)) {
+    if (text.length > 5_000_000) throw new Error("Image is too large. Please upload an image under ~3 MB.");
+    return text;
+  }
+  return normalizeOptionalUrl(text);
 }
