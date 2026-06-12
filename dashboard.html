@@ -318,6 +318,24 @@
       </div>
     </div>
 
+    <!-- QR image lightbox -->
+    <div class="qr-modal" id="qrImageModal" hidden>
+      <div class="qr-modal-overlay" data-qr-close></div>
+      <div class="qr-modal-card" role="dialog" aria-modal="true" aria-label="QR code preview">
+        <button class="qr-modal-close" type="button" data-qr-close aria-label="Close">&times;</button>
+        <h3 class="qr-modal-title" id="qrModalTitle">QR code</h3>
+        <div class="qr-modal-imgwrap">
+          <img id="qrModalImage" src="" alt="QR code" />
+        </div>
+        <div class="qr-modal-actions">
+          <a class="primary-button" id="qrModalDownload" href="#" download="qr-code.png">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px;vertical-align:-3px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </a>
+        </div>
+      </div>
+    </div>
+
     <script src="dashboard.js"></script>
   </body>
 </html>

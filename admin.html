@@ -128,6 +128,37 @@
       }
       .bg-save-btn:hover { box-shadow: 0 8px 18px -8px rgba(79,70,229,0.6); }
       .bg-save-btn.is-saved { background: #10b981; }
+
+      /* QR thumbnail (clickable) */
+      .qr-thumb-btn {
+        border: 1px solid #e2e8f0; border-radius: 10px; padding: 4px; background: #fff;
+        cursor: zoom-in; line-height: 0; transition: border-color 130ms ease, box-shadow 130ms ease;
+      }
+      .qr-thumb-btn:hover { border-color: #818cf8; box-shadow: 0 6px 16px -8px rgba(79,70,229,0.5); }
+      .qr-thumb { width: 46px; height: 46px; object-fit: contain; border-radius: 6px; display: block; }
+      .qr-thumb-placeholder { font-size: 0.78rem; color: #94a3b8; }
+
+      /* QR image lightbox modal */
+      .qr-modal { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+      .qr-modal[hidden] { display: none; }
+      .qr-modal-overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(2px); }
+      .qr-modal-card {
+        position: relative; z-index: 1; background: #fff; border-radius: 18px; padding: 24px;
+        width: min(92vw, 420px); box-shadow: 0 30px 70px -20px rgba(15,23,42,0.5); text-align: center;
+      }
+      .qr-modal-title { margin: 0 0 16px; font-size: 1.05rem; font-weight: 700; color: #0f172a; }
+      .qr-modal-close {
+        position: absolute; top: 12px; right: 14px; border: 0; background: transparent;
+        font-size: 1.6rem; line-height: 1; color: #94a3b8; cursor: pointer;
+      }
+      .qr-modal-close:hover { color: #0f172a; }
+      .qr-modal-imgwrap {
+        background: #fff; border: 1px solid #eef0f4; border-radius: 12px; padding: 16px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .qr-modal-imgwrap img { width: 100%; max-width: 340px; height: auto; image-rendering: pixelated; display: block; }
+      .qr-modal-actions { margin-top: 18px; }
+      .qr-modal-actions .primary-button { display: inline-flex; align-items: center; text-decoration: none; }
       .sidebar-footer-label {
         font-size: 0.72rem;
         color: rgba(255,255,255,0.35);
@@ -662,6 +693,24 @@
           </section>
         </div>
       </main>
+    </div>
+
+    <!-- QR image lightbox -->
+    <div class="qr-modal" id="qrImageModal" hidden>
+      <div class="qr-modal-overlay" data-qr-close></div>
+      <div class="qr-modal-card" role="dialog" aria-modal="true" aria-label="QR code preview">
+        <button class="qr-modal-close" type="button" data-qr-close aria-label="Close">&times;</button>
+        <h3 class="qr-modal-title" id="qrModalTitle">QR code</h3>
+        <div class="qr-modal-imgwrap">
+          <img id="qrModalImage" src="" alt="QR code" />
+        </div>
+        <div class="qr-modal-actions">
+          <a class="primary-button" id="qrModalDownload" href="#" download="qr-code.png">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-right:6px;vertical-align:-3px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </a>
+        </div>
+      </div>
     </div>
 
     <script src="admin.js"></script>

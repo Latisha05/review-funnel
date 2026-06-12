@@ -91,6 +91,8 @@ function setupNavigation() {
 
 function setupEvents() {
   elements.refreshDataButton.addEventListener("click", loadDashboardData);
+  document.querySelectorAll("[data-qr-close]").forEach((el) => el.addEventListener("click", closeQrModal));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeQrModal(); });
   if (elements.logoutButton) {
     elements.logoutButton.addEventListener("click", openLogoutConfirmation);
   }
@@ -426,6 +428,9 @@ function renderQrRegistry() {
   elements.qrCodesRegistryTable.querySelectorAll("[data-copy]").forEach((button) => {
     button.addEventListener("click", () => copyText(button.dataset.copy));
   });
+  elements.qrCodesRegistryTable.querySelectorAll("[data-qr-zoom]").forEach((button) => {
+    button.addEventListener("click", () => openQrModal(button.dataset.qrZoom, button.dataset.qrLabel));
+  });
 }
 
 function renderReviewEvents() {
@@ -698,10 +703,32 @@ function renderQrImageCell(qrImageUrl, label) {
     return `<span class="qr-thumb-placeholder">No image</span>`;
   }
   return `
-    <a class="qr-thumb-link" href="${escapeHtml(qrImageUrl)}" target="_blank" rel="noreferrer">
+    <button class="qr-thumb-btn" type="button" title="Click to enlarge" data-qr-zoom="${escapeHtml(qrImageUrl)}" data-qr-label="${escapeHtml(label || "QR code")}">
       <img class="qr-thumb" src="${escapeHtml(qrImageUrl)}" alt="${escapeHtml(label || "QR code")}" loading="lazy" />
-    </a>
+    </button>
   `;
+}
+
+function openQrModal(src, label) {
+  if (!src) return;
+  const modal = document.querySelector("#qrImageModal");
+  const img = document.querySelector("#qrModalImage");
+  const dl = document.querySelector("#qrModalDownload");
+  const title = document.querySelector("#qrModalTitle");
+  if (!modal || !img || !dl) return;
+  img.src = src;
+  img.alt = label ? `${label} QR code` : "QR code";
+  if (title) title.textContent = label || "QR code";
+  dl.href = src;
+  dl.setAttribute("download", `${slugify(label || "qr-code")}.png`);
+  modal.hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+function closeQrModal() {
+  const modal = document.querySelector("#qrImageModal");
+  if (modal) modal.hidden = true;
+  document.body.style.overflow = "";
 }
 
 function shortenUrl(value) {
