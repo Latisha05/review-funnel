@@ -2708,37 +2708,8 @@ body[data-step="rating"] .rating-grid {
   color: #b91c1c;
 }
 
-.qr-thumb-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.qr-thumb {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-.qr-thumb-placeholder {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-  color: var(--muted);
-  font-size: 0.72rem;
-  text-align: center;
-}
+/* (Legacy .qr-thumb-link / oversized .qr-thumb rules removed — the clickable
+   thumbnail + lightbox styles near the top of this file now own .qr-thumb.) */
 
 /* Subscription SaaS styling */
 .subscription-intro {
