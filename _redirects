@@ -1,3 +1,0 @@
-# Empty _redirects — let Cloudflare Pages handle canonicalization natively.
-# Adding rewrite rules that target *.html triggers the asset worker's
-# 308 canonicalization and creates redirect loops.
